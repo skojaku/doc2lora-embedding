@@ -7,7 +7,7 @@ manuscript (index 0), followed by seven semantically equivalent rewrites.
 
 # ── family A: cluster / node labelling (the 2-3 word field prompt) ─────────────────────
 LABEL_PROMPTS = [
-    # verbatim (exps/2026-06-11-baseline-trees/decode_fullrank_field23.py)
+    # verbatim (workflow/scripts/decode_fullrank_field23.py)
     "In 2 to 3 words, name the scientific field that all of these documents belong to. "
     "Reply with only the field name.",
     "Using 2 or 3 words, state the scientific field shared by all of these documents. "

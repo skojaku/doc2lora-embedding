@@ -28,7 +28,7 @@ def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--family", choices=list(FAMILIES), required=True)
     p.add_argument("--out", required=True)
-    p.add_argument("--means", default="exps/2026-06-11-baseline-trees/qwen_fullrank_means.npz")
+    p.add_argument("--means", default="data/labels/qwen_fullrank_means.npz")
     p.add_argument("--sample", default="data/groupc/fidelity/sample.parquet")
     p.add_argument("--n_units", type=int, default=40)
     p.add_argument("--k", type=int, default=8)

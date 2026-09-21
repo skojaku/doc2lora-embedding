@@ -1,6 +1,6 @@
 """Generate the similarity-benchmark LaTeX tables from the bootstrap summary.
 
-Reads exps/2026-06-10-uncertainty/uncertainty_summary.csv (benchmark, group, enc,
+Reads data/uncertainty/uncertainty_summary.csv (benchmark, group, enc,
 method, metric, mean, std, ci2_5, ci97_5) and emits two booktabs fragments that
 paper/iclr2026/main.tex \\input's:
 

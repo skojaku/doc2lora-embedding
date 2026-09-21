@@ -2,7 +2,7 @@
 Text-to-LoRA decodes along the A-B edge (#151).
 
 T2L was decoded on the same 13-point alpha grid as the other arms (0 to 1 in
-steps of 1/12, weight on B) by exps/2026-09-18-t2l-baseline/t2l_fusion.py
+steps of 1/12, weight on B) by workflow/scripts/t2l_fusion.py
 (t2l.smk:t2l_fusion), in each of its three candidate embedding spaces (e0 = frozen gte output, e1 = TaskEncoder
 output, e2 = generated LoRA factors). This script scores one space with the
 same two statistics the other arms carry (pair_axis_metrics.py /
@@ -15,8 +15,8 @@ and writes a pair_axis-shaped cache: {set: {"stratum", "pts": {"mix": {alpha:
 t}, "copy": {alpha: rate}}}}. CPU, seconds.
 
     python workflow/scripts/fig2_t2l_edge_metrics.py \
-        --midpoints exps/2026-09-18-t2l-baseline/results/midpoints_t2l_e1.json \
-        --out exps/2026-07-02-simplex-kwgrid/results/pair_axis_t2l_e1_pairaxis.json
+        --midpoints data/t2l/results/midpoints_t2l_e1.json \
+        --out data/pair_axis/results/pair_axis_t2l_e1_pairaxis.json
 """
 import argparse
 import json

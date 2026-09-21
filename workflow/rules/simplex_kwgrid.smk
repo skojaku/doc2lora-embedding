@@ -1,4 +1,4 @@
-# Pair-axis interpolation study (exps/2026-07-02-simplex-kwgrid) -- the data and
+# Pair-axis interpolation study (data/pair_axis) -- the data and
 # the panels behind Figure 2's two-way composition result (#60 follow-up, #141).
 #
 # Simplifies the 3-corner fusion simplex to a single A-B axis: fuse two corner
@@ -41,12 +41,12 @@
 #      snakemake kg_all           (the full study, GPU)
 from os.path import join as j
 
-KG_DIR = "exps/2026-07-02-simplex-kwgrid"
+KG_DIR = "data/pair_axis"
 KG_RES = j(KG_DIR, "results")
 KG_STRATA = ["L1", "L2", "L3", "L4", "L5"]
 KG_N = config.get("kwgrid_pairs_per_stratum", 50)
 KG_IDS = [f"{n:02d}" for n in range(KG_N)]
-KG_GPU = "bash exps/2026-07-02-simplex-kwgrid/gpu_run_kg.sh"
+KG_GPU = "bash workflow/scripts/gpu_run_kg.sh"
 KG_D2L_SRC = config.get("doc_to_lora_src", "doc-to-lora/src")
 KG_ENV = (f"export DOC_TO_LORA_SRC={KG_D2L_SRC} PYTHONPATH={KG_D2L_SRC} "
           f"DOC2LORA_CKPT={QWEN_CHECKPOINT_PATH};")
@@ -60,7 +60,6 @@ KG_FIG_LANDING = j(KG_DIR, "figs", "pair_axis_landing.pdf")
 KG_FIG_LINE = j(KG_DIR, "figs", "pair_axis_line.pdf")
 
 # Figure 2 panels, published out of the experiment directory.
-SKG_FIGS = j(config.get("figs_dir", "figs"), "fig2-panels")
 SKG_STRATA = config.get("skg_strata", ["L1", "L5"])
 SKG_COPY_CACHE = j(KG_RES, "pair_axis_copyrate_pairaxis_{stratum}.json")
 
@@ -73,7 +72,7 @@ wildcard_constraints:
 # Corner-pair selection (CPU, ~2 min).
 rule kg_pairs:
     input:
-        script=j(KG_DIR, "sample_far_pairs.py"),
+        script=j(SCRIPTS, "sample_far_pairs.py"),
     output:
         corners=expand(KG_CORNERS, L=KG_STRATA, n=KG_IDS),
         manifest=KG_MANIFEST,
@@ -87,7 +86,7 @@ rule kg_pairs:
 rule kg_decode_doc2lora:
     input:
         corners=expand(KG_CORNERS, n=KG_IDS, allow_missing=True),
-        script=j(KG_DIR, "decode_absfollow.py"),
+        script=j(SCRIPTS, "decode_absfollow.py"),
     output:
         expand(KG_ABS, n=KG_IDS, allow_missing=True),
     params:
@@ -102,7 +101,7 @@ rule kg_decode_doc2lora:
 rule kg_decode_icae:
     input:
         corners=expand(KG_CORNERS, n=KG_IDS, allow_missing=True),
-        script=j(KG_DIR, "decode_absfollow_icae.py"),
+        script=j(SCRIPTS, "decode_absfollow_icae.py"),
     output:
         expand(KG_ABS_ICAE, n=KG_IDS, allow_missing=True),
     params:
@@ -129,7 +128,7 @@ rule kg_metrics:
         base=expand(KG_ABS, L=KG_STRATA, n=KG_IDS),
         icae=expand(KG_ABS_ICAE, L=KG_STRATA, n=KG_IDS),
         manifest=KG_MANIFEST,
-        script=j(KG_DIR, "pair_axis_metrics.py"),
+        script=j(SCRIPTS, "pair_axis_metrics.py"),
     output:
         metrics=KG_METRICS,
     resources:
@@ -143,48 +142,27 @@ rule kg_all:
         KG_METRICS,
 
 
-# ── Figure 2 panels (CPU, from the tracked caches) ──────────────────────────
-
-# Panel (e): verbatim copy rate against ideal mixing, one PDF per stratum --
-# which is how the committed panels were produced (pair_axis_copyrate_L1.pdf and
-# _L5.pdf), not as a single combined plot.
-rule skg_copyrate:
+# ── Copy rate along the edge (Fig. cluster-labels f) ────────────────────────
+# Scores the same decodes kg_metrics reads, per stratum, and caches what it plots.
+# Fig. cluster-labels reads this cache; the standalone per-stratum PDF the script
+# also writes is an intermediate, not a reported asset, so it is not declared.
+rule kg_copyrate:
     input:
-        script=j(KG_DIR, "pair_axis_copyrate.py"),
+        base=expand(KG_ABS, L=KG_STRATA, n=KG_IDS),
+        icae=expand(KG_ABS_ICAE, L=KG_STRATA, n=KG_IDS),
+        script=j(SCRIPTS, "pair_axis_copyrate.py"),
     output:
-        figs=expand(j(SKG_FIGS, "pair_axis_copyrate_{stratum}.pdf"), stratum=SKG_STRATA),
-    params:
-        strata=SKG_STRATA,
-        outdir=SKG_FIGS,
+        cache=SKG_COPY_CACHE,
+    resources:
+        gpu=1,
     shell:
-        "mkdir -p {params.outdir}; "
-        "for s in {params.strata}; do "
-        "  python {input.script} --strata $s --replot && "
-        "  cp " + j(KG_DIR, "figs", "pair_axis_copyrate_$s.pdf") + " {params.outdir}/; "
-        "done"
-
-
-# Panel (d): actual against ideal mixing. pair_axis_metrics.py --replot draws
-# pair_axis_line_L1.pdf and _L5.pdf (plus the landing diagram) from KG_METRICS;
-# the L1 file is byte-identical to the panel embedded in the hand-made export.
-rule skg_pair_axis_line:
-    input:
-        script=j(KG_DIR, "pair_axis_metrics.py"),
-    output:
-        figs=expand(j(SKG_FIGS, "pair_axis_line_{stratum}.pdf"), stratum=["L1", "L5"]),
-    params:
-        outdir=SKG_FIGS,
-        srcdir=j(KG_DIR, "figs"),
-    shell:
-        "mkdir -p {params.outdir}; "
-        "python {input.script} --replot; "
-        "for s in L1 L5; do cp {params.srcdir}/pair_axis_line_$s.pdf {params.outdir}/; done"
+        KG_GPU + " python {input.script} --strata {wildcards.stratum}"
 
 
 rule simplex_kwgrid:
     input:
-        rules.skg_copyrate.output,
-        rules.skg_pair_axis_line.output,
+        expand(SKG_COPY_CACHE, stratum=SKG_STRATA),
+        KG_METRICS,
 
 
 # ── Prompt sensitivity of the edge decode (§4.3 / app:prompt-sensitivity) ────
@@ -216,8 +194,8 @@ wildcard_constraints:
 rule kg_psens_decode_doc2lora:
     input:
         corners=expand(KG_CORNERS, n=KG_PSENS_PAIRS, allow_missing=True),
-        script=j(KG_DIR, "decode_absfollow.py"),
-        prompts=j(KG_DIR, "psens_prompts.py"),
+        script=j(SCRIPTS, "decode_absfollow.py"),
+        prompts=j(SCRIPTS, "psens_prompts.py"),
     output:
         expand(KG_PSENS_ABS, n=KG_PSENS_PAIRS, allow_missing=True),
     params:
@@ -233,8 +211,8 @@ rule kg_psens_decode_doc2lora:
 rule kg_psens_decode_icae:
     input:
         corners=expand(KG_CORNERS, n=KG_PSENS_PAIRS, allow_missing=True),
-        script=j(KG_DIR, "decode_absfollow_icae.py"),
-        prompts=j(KG_DIR, "psens_prompts.py"),
+        script=j(SCRIPTS, "decode_absfollow_icae.py"),
+        prompts=j(SCRIPTS, "psens_prompts.py"),
     output:
         expand(KG_PSENS_ABS_ICAE, n=KG_PSENS_PAIRS, allow_missing=True),
     params:
@@ -253,7 +231,7 @@ rule kg_psens_score:
         icae=expand(KG_PSENS_ABS_ICAE, L=KG_PSENS_STRATA, n=KG_PSENS_PAIRS, p=KG_PSENS_IDS),
         p0=expand(KG_ABS, L=KG_PSENS_STRATA, n=KG_PSENS_PAIRS),
         p0_icae=expand(KG_ABS_ICAE, L=KG_PSENS_STRATA, n=KG_PSENS_PAIRS),
-        script=j(KG_DIR, "psens_edge_score.py"),
+        script=j(SCRIPTS, "psens_edge_score.py"),
     output:
         js=KG_PSENS_JSON,
         tex=KG_PSENS_TEX,

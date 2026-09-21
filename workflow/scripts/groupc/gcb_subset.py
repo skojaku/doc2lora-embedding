@@ -1,7 +1,7 @@
 """[CPU] Assemble the benchmark-subset text table for the Group C similarity re-runs (#69/#93/#72).
 
 Encoding a full field corpus (565k-987k papers) with every new encoder is not affordable, and it is
-not necessary: exps/2026-06-21-icae-benchmark/{field}_eval_ids.parquet (#63) lists exactly the papers
+not necessary: data/icae/{field}_eval_ids.parquet (#63) lists exactly the papers
 the collab / next-paper / topic harness touches, and slicing to it was verified byte-identical for
 evaluation.  Every Group C encoder is run on that subset.
 
@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, "workflow/scripts")
-sys.path.insert(0, "exps/2026-06-07-layer-bands")
+sys.path.insert(0, "data/layer_bands")
 from bench_data import load  # noqa: E402
 
 FIELD = snakemake.wildcards.field                      # noqa: F821

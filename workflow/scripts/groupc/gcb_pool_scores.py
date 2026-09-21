@@ -1,6 +1,6 @@
 """[GPU-light] Paired per-unit score pools for the Group C similarity re-runs (#69 / #93 / #72).
 
-Same construction as exps/2026-06-10-uncertainty/score_pool_field.py -- identical evaluation units
+Same construction as workflow/scripts/score_pool_field.py -- identical evaluation units
 across methods, so the bootstrap is paired -- but the method list is open, so it can carry:
   * the 2024-era encoders (#69),
   * every text baseline WITH the same citation-trained bijective transform applied (#93's control),
@@ -21,7 +21,7 @@ import pandas as pd
 import torch
 
 sys.path.insert(0, "workflow/scripts")
-sys.path.insert(0, "exps/2026-06-07-layer-bands")
+sys.path.insert(0, "data/layer_bands")
 from bench_data import load  # noqa: E402
 from eval_collab2 import author_cos  # noqa: E402
 

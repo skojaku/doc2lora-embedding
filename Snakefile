@@ -1,17 +1,15 @@
 """Reproduction workflow for "Doc2LoRA Provides Decodable Representations of
-Scientific Ideas" (paper/iclr2026).
+Scientific Ideas".
 
-This workflow is trimmed to the dependency closure of the assets the manuscript
-actually reads -- the main text and its appendices (SI), and nothing else.
-Exploration chains that never reached the PDF (simplex fusion, topological
-holes, the idea-gene GA, cross-domain analogy) live in the development repository
-and were deliberately left out.
+Every rule here produces a number, a table, or a figure that the paper reports.
+A chain whose result did not reach the paper is not in this repository, and a
+rule that no reported result depends on is not in this workflow.
 
 Entry points
 ------------
     snakemake -n paper_assets     # dry run: prints the whole DAG, runs nothing
-    snakemake paper_assets -j4    # rebuild every manuscript asset a rule owns
-    snakemake paper -j4           # the above, then compile paper/iclr2026/main.pdf
+    snakemake paper_assets -j4    # rebuild every reported asset a rule owns
+    snakemake sample_check -j4    # the same pipeline on the bundled sample corpus
 
 Step 0 is mandatory: copy workflow/config.template.yaml to workflow/config.yaml
 and set the paths for your machine. See README.md and REPRODUCE.md.
@@ -36,12 +34,14 @@ APS_DIR = j(DATA_DIR, "aps")
 EMB_DIR = j(APS_DIR, "embeddings")
 POOLING_CSV = j(APS_DIR, "pooling_spearman.csv")
 
-PAPER_DIR = config["paper_dir"]
-PAPER_SRC = j(PAPER_DIR, "main.tex")
-PAPER = j(PAPER_DIR, "main.pdf")
+# Every script the rules call lives in one directory; every file a rule writes
+# lives under data/. Rule files read both from the including scope.
+SCRIPTS = "workflow/scripts"
+PLOT = "workflow/plot"
 
-# Several rule files read FIGS_DIR from the including scope.
-FIGS_DIR = config.get("figs_dir", "figs")
+# Where the generated tables and figures land. Nothing here is tracked: every
+# file under it is the output of a rule in this workflow.
+FIGS_DIR = config.get("figs_dir", "results/figs")
 
 # ── Sub-workflows (closure of the manuscript's assets) ───────────────────
 # Shared backbone: corpora -> genes -> transforms -> per-task scores
@@ -49,7 +49,7 @@ include: "workflow/rules/pacs_groups.smk"       # PACS concept hierarchy (node s
 include: "workflow/rules/fields.smk"            # economics / psychology corpora + genes
 include: "workflow/rules/baselines.smk"         # SPECTER2 / INSTRUCTOR / EmbeddingGemma / GTE
 include: "workflow/rules/collab_scores.smk"     # co-authorship benchmark pairs
-include: "workflow/rules/idea_compatibility.smk"  # APS SBERT abstracts + mobility flow
+include: "workflow/rules/idea_compatibility.smk"  # full-corpus SBERT vectors over APS abstracts
 include: "workflow/rules/kron_adapter.smk"      # per-field invertible citation adapter
 include: "workflow/rules/general_adapter.smk"   # one general OpenAlex adapter (genkron)
 include: "workflow/rules/s2and.smk"             # author-name disambiguation benchmark
@@ -57,14 +57,13 @@ include: "workflow/rules/s2and.smk"             # author-name disambiguation ben
 include: "workflow/rules/uncertainty.smk"       # Tab. similarity + Tab. encoder-matrix
 include: "workflow/rules/baseline_trees.smk"    # Tab. hierarchy-labels + Tab. label-eval
 include: "workflow/rules/abstraction_walk.smk"  # Wikipedia radius walk (Fig. cluster-labels panel d)
-include: "workflow/rules/groupc_fidelity.smk"   # only fid_sample is on the SI path (see REPRODUCE.md)
+include: "workflow/rules/fid_sample.smk"        # the abstract sample the psens decodes share
 include: "workflow/rules/groupc_psens.smk"      # Tab. prompt-sensitivity (App.)
 include: "workflow/rules/groupc_incoherent.smk" # Tab. incoherent-control (App.)
 # Chains whose numbers are TYPED into the manuscript rather than \input-ed, so they
 # sit behind their own targets and not in `paper_assets` (see REPRODUCE.md):
 include: "workflow/rules/bench.smk"             # benchmark subsets the two chains below read
 include: "workflow/rules/icae.smk"              # ICAE baseline embeddings
-include: "workflow/rules/groupc_efficiency.smk" # Tab. "What an embedding costs" (Sec. results)
 include: "workflow/rules/groupc_bench.smk"      # temporal-hardening claims (App. datasets, #72)
 include: "workflow/rules/t2l.smk"               # Text-to-LoRA hypernetwork-adapter baseline
 include: "workflow/rules/actpatch.smk"          # the base model's own hidden states as a decoder
@@ -111,18 +110,6 @@ rule paper_assets:
         POOLING_CSV,
 
 
-rule paper:
-    input:
-        rules.paper_assets.input,
-        PAPER_SRC,
-    params:
-        paper_dir=PAPER_DIR,
-    output:
-        PAPER,
-    shell:
-        "cd {params.paper_dir}; make"
-
-
 # ── Convenience targets (each sub-workflow on its own) ───────────────────
 
 rule all:
@@ -156,14 +143,6 @@ rule s2and:
 rule uncertainty:
     input:
         rules.uncertainty_all.input,
-
-rule idea_compatibility:
-    input:
-        rules.idea_compatibility_all.input,
-
-rule efficiency:
-    input:
-        rules.groupc_efficiency.input,
 
 rule temporal_hardening:
     input:
@@ -288,20 +267,3 @@ rule pooling_validation:
         gpu=1,
     script:
         "workflow/scripts/pooling_validation.py"
-
-
-# ── Full-rank genes for a paper subset (used by the decode chains) ───────
-
-rule embed_papers_full:
-    input:
-        paper_text=j(APS_DIR, "paper_text.parquet"),
-        paper_ids=j(APS_DIR, "embeddings", "{subset}_paper_ids.txt"),
-    output:
-        embeddings=j(EMB_DIR, "doc2lora_full_{subset}.npz"),
-    params:
-        checkpoint_path=CHECKPOINT_PATH,
-        gpu_ids=config["gpu_ids"],
-    resources:
-        gpu=1,
-    script:
-        "workflow/scripts/embed_papers_full.py"

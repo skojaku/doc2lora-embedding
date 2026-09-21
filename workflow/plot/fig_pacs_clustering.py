@@ -681,8 +681,8 @@ if "snakemake" in sys.modules:
           out_pdf=snakemake.output["pdf"],
           stratum=snakemake.params["stratum"])
 elif __name__ == "__main__":
-    BT = "exps/2026-06-11-baseline-trees"
-    SKG = "exps/2026-07-02-simplex-kwgrid"
+    BT = "data/labels"
+    SKG = "data/pair_axis"
     ap = argparse.ArgumentParser()
     ap.add_argument("--fuzzy-json", default=f"{BT}/label_eval_metric1.json")
     ap.add_argument("--judge-json", default=f"{BT}/label_eval_metric4.json")

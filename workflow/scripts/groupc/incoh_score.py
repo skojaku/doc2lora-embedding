@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, "workflow/plot")
-sys.path.insert(0, "exps/2026-06-11-baseline-trees")
+sys.path.insert(0, "data/labels")
 
 NICE = {"real": "PACS node (real)", "control_native": "cross-chapter control",
         "control_matched": "cross-chapter, norm-matched"}

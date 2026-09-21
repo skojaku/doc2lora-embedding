@@ -12,15 +12,15 @@
 import os
 from os.path import join as j
 
-IC = "exps/2026-06-21-icae-benchmark"
-KR = "exps/2026-06-09-kron-adapter"
-S2 = "exps/2026-06-09-s2and"
+IC = "data/icae"
+KR = "data/kron"
+S2 = "data/s2and"
 IC_FIELDS = ["economics", "psychology"]          # OpenAlex field tasks (eval_all)
 IC_S2AND = ["zbmath", "qian", "arnetminer", "pubmed", "kisti"]
 IC_ENV = (f"set -a; source .env 2>/dev/null; set +a; "
           f"export HF_HOME={os.path.abspath('data/agent_assets/hf_cache')} "
           f"PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True;")
-GPU = f"bash {S2}/gpu_run.sh"
+GPU = f"bash {SCRIPTS}/gpu_run.sh"
 OAX_EMB = j("data", "fields", "{field}", "embeddings")
 APS_EMB = j("data", "aps", "embeddings")
 
@@ -34,39 +34,39 @@ rule ic_collect_ids:
     output: expand(j(IC, "{f}_eval_ids.parquet"), f=IC_FIELDS + ["aps"]),
             expand(j(IC, "{f}_topic_ids.parquet"), f=IC_FIELDS + ["aps"]),
     resources: mem_gb=80,
-    shell: f"python {IC}/collect_field_ids.py {' '.join(IC_FIELDS)} aps"
+    shell: f"python {SCRIPTS}/collect_field_ids.py {' '.join(IC_FIELDS)} aps"
 
 # ---- ICAE-compress the OpenAlex pool -> per-token slots (for adapter training) ----
 rule ic_pool_slots:
-    input: j("exps/2026-06-10-general-adapter", "pool_text.parquet"),
+    input: j("data/general_adapter", "pool_text.parquet"),
     output: slots=j(IC, "pool_slots.npy"), pids=j(IC, "pool_pids.npy"),
     resources: gpu=1, mem_gb=40,
-    shell: f"{IC_ENV} BATCH=24 {GPU} python {IC}/embed_pool_slots.py"
+    shell: f"{IC_ENV} BATCH=24 {GPU} python {SCRIPTS}/embed_pool_slots.py"
 
 rule ic_train:
-    input: slots=j(IC, "pool_slots.npy"), trip=j("exps/2026-06-10-general-adapter", "triplets.parquet"),
+    input: slots=j(IC, "pool_slots.npy"), trip=j("data/general_adapter", "triplets.parquet"),
     output: adapter=j(IC, "adapter_icae.pt"),
     resources: gpu=1, mem_gb=40,
-    shell: f"{IC_ENV} STEPS=8000 {GPU} python {IC}/train_icae_adapter.py"
+    shell: f"{IC_ENV} STEPS=8000 {GPU} python {SCRIPTS}/train_icae_adapter.py"
 
 # ---- embed each benchmark subset (raw icae + icae_genkron), needs the adapter ----
 rule ic_embed_field:
     input: adapter=j(IC, "adapter_icae.pt"), ids=j(IC, "{field}_eval_ids.parquet"),
     output: raw=j(OAX_EMB, "icae_emb.npz"), gk=j(OAX_EMB, "icae_genkron_emb.npz"),
     resources: gpu=1, mem_gb=40,
-    shell: f"{IC_ENV} BATCH=24 {GPU} python {IC}/embed_apply.py field {{wildcards.field}}"
+    shell: f"{IC_ENV} BATCH=24 {GPU} python {SCRIPTS}/embed_apply.py field {{wildcards.field}}"
 
 rule ic_embed_aps:
     input: adapter=j(IC, "adapter_icae.pt"), ids=j(IC, "aps_eval_ids.parquet"),
     output: raw=j(APS_EMB, "icae_emb.npz"), gk=j(APS_EMB, "icae_genkron_emb.npz"),
     resources: gpu=1, mem_gb=40,
-    shell: f"{IC_ENV} BATCH=24 {GPU} python {IC}/embed_apply.py aps"
+    shell: f"{IC_ENV} BATCH=24 {GPU} python {SCRIPTS}/embed_apply.py aps"
 
 rule ic_embed_s2and:
     input: adapter=j(IC, "adapter_icae.pt"),
     output: raw=j(S2, "proc", "{ds}", "icae.npz"), gk=j(S2, "proc", "{ds}", "icae_genkron.npz"),
     resources: gpu=1, mem_gb=20,
-    shell: f"{IC_ENV} BATCH=24 {GPU} python {IC}/embed_apply.py s2and {{wildcards.ds}}"
+    shell: f"{IC_ENV} BATCH=24 {GPU} python {SCRIPTS}/embed_apply.py s2and {{wildcards.ds}}"
 
 # ---- evaluate (INCLUDE_ICAE adds icae/icae_genkron to the comparison; fixed topic subsample) ----
 rule ic_eval_field:
@@ -77,7 +77,7 @@ rule ic_eval_field:
     shell: f"{IC_ENV} INCLUDE_ICAE=1 OUT_SUFFIX=_icae TOPIC_IDS_FILE={IC}/{{wildcards.field}}_topic_ids.parquet "
            f"NP_FUT_POOL_FILE={IC}/{{wildcards.field}}_fut_pool.parquet "
            f"NP_COHORT_FILE={IC}/{{wildcards.field}}_cohorts.parquet "
-           f"{GPU} python {KR}/eval_all.py --field {{wildcards.field}} --enc qwen"
+           f"{GPU} python {SCRIPTS}/eval_all.py --field {{wildcards.field}} --enc qwen"
 
 rule ic_eval_aps:
     input: raw=j(APS_EMB, "icae_emb.npz"), gk=j(APS_EMB, "icae_genkron_emb.npz"),
@@ -87,13 +87,13 @@ rule ic_eval_aps:
     shell: f"{IC_ENV} INCLUDE_ICAE=1 OUT_SUFFIX=_icae TOPIC_IDS_FILE={IC}/aps_topic_ids.parquet "
            f"NP_FUT_POOL_FILE={IC}/aps_fut_pool.parquet "
            f"NP_COHORT_FILE={IC}/aps_cohorts.parquet "
-           f"{GPU} python {KR}/eval_all.py --field aps --enc qwen"
+           f"{GPU} python {SCRIPTS}/eval_all.py --field aps --enc qwen"
 
 rule ic_eval_s2and:
     input: raw=j(S2, "proc", "{ds}", "icae.npz"), gk=j(S2, "proc", "{ds}", "icae_genkron.npz"),
     output: csv=j(S2, "results_{ds}_qwen_icae.csv"),
     resources: gpu=1, mem_gb=40,
-    shell: f"{IC_ENV} OUT_SUFFIX=_icae KRON_STEPS=2000 KRON_REG=10 {GPU} python {S2}/and_eval.py {{wildcards.ds}} qwen"
+    shell: f"{IC_ENV} OUT_SUFFIX=_icae KRON_STEPS=2000 KRON_REG=10 {GPU} python {SCRIPTS}/and_eval.py {{wildcards.ds}} qwen"
 
 
 rule icae_all:

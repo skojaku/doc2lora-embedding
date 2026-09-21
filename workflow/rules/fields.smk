@@ -1,15 +1,13 @@
-# Multi-field generalization of the idea-compatibility (author-mobility vs text) pipeline.
+# The two OpenAlex field corpora the paper reports on, end to end.
 #
-# Runs the SAME analysis as idea_compatibility.smk (APS/PACS) on arbitrary OpenAlex fields
-# using the Scopus 2-level topic classification: sub_class = mobility "code" (252 subfields),
-# main_class = coarse topic (26 fields) for the cross/within-topic pair split.
+# Economics and Psychology stand next to APS physics so that no claim rests on one
+# corpus. Scopus two-level topics give the label for the topic-classification task
+# (sub_class, 252 subfields) and the coarse split (main_class, 26 fields).
 #
 # Per field {field} in FIELD_LIST:
-#   prepare_field_text -> paper_text.parquet + paper_topics.parquet
-#   embed_field_papers (per model in MODEL_LIST: qwen/gemma/mistral genes)
-#   field_sbert_abstracts (textual baseline)
-#   field_mobility_flow (author sub_class->sub_class transition PMI)
-#   field_idea_compatibility_test (partial-Mantel genes/SBERT/TF-IDF vs flow + figure)
+#   prepare_field_text     -> paper_text.parquet + paper_topics.parquet
+#   embed_field_papers     -> one gene matrix per model in MODEL_LIST
+#   field_sbert_abstracts  -> the SBERT vectors the score pools read
 
 from os.path import join as j
 
@@ -35,25 +33,10 @@ FIELD_CKPT = {
 
 FIELDS_DIR = j(DATA_DIR, "fields", "{field}")
 FIELD_EMB_DIR = j(FIELDS_DIR, "embeddings")
-FIELD_COMPAT_DIR = j(FIELDS_DIR, "compat")
-
-field_compat_params = {
-    "level": config.get("field_compat_level", ["sub"]),
-    "topk": config.get("field_compat_topk", [150]),
-}
-field_compat_ps = to_paramspace(field_compat_params)
-
 FIELD_PAPER_TEXT = j(FIELDS_DIR, "paper_text.parquet")
 FIELD_PAPER_TOPICS = j(FIELDS_DIR, "paper_topics.parquet")
 FIELD_SBERT = j(FIELD_EMB_DIR, "sbert_allmpnet.npz")
 FIELD_GENE = j(FIELD_EMB_DIR, "{model}_norm_lora_emb.npz")
-# scientific-text baselines folded into the compat figure (SBERT is already the primary text ctrl)
-COMPAT_BASELINES = config.get("compat_baselines", ["specter2", "instructor", "text2vec"])
-FIELD_BASELINE = j(FIELD_EMB_DIR, "baseline_{method}.npz")
-FIELD_FLOW = j(FIELD_COMPAT_DIR, f"flow_{field_compat_ps.wildcard_pattern}.npz")
-FIELD_COMPAT_JSON = j(FIELD_COMPAT_DIR, f"results_{field_compat_ps.wildcard_pattern}.json")
-FIELD_COMPAT_CSV = j(FIELD_COMPAT_DIR, f"results_{field_compat_ps.wildcard_pattern}.csv")
-FIELD_COMPAT_FIG = j(FIELD_COMPAT_DIR, f"figure_{field_compat_ps.wildcard_pattern}.pdf")
 
 wildcard_constraints:
     field="|".join(FIELD_LIST),
@@ -114,46 +97,8 @@ rule field_sbert_abstracts:
         "../scripts/embed_field_abstracts_sbert.py"
 
 
-# ── author-mobility flow over sub_class codes ────────────────────────────
-rule field_mobility_flow:
-    input:
-        paper_topics=FIELD_PAPER_TOPICS,
-    output:
-        flow=FIELD_FLOW,
-    params:
-        author_paper_table=lambda w: j(FIELDS_PREP_BASE, f"openalex-{w.field}", "author_paper_table.csv"),
-        paper_table=lambda w: j(FIELDS_PREP_BASE, f"openalex-{w.field}", "paper_table.csv"),
-        topk=lambda w: w.topk,
-        min_papers=config.get("field_compat_min_papers", 1),
-    script:
-        "../scripts/build_field_mobility_flow.py"
-
-
-# ── idea-compatibility test ──────────────────────────────────────────────
-rule field_idea_compatibility_test:
-    input:
-        flow=FIELD_FLOW,
-        sbert=FIELD_SBERT,
-        paper_topics=FIELD_PAPER_TOPICS,
-        paper_text=FIELD_PAPER_TEXT,
-        genes=expand(FIELD_GENE, model=MODEL_LIST, allow_missing=True),
-        baselines=expand(FIELD_BASELINE, method=COMPAT_BASELINES, allow_missing=True),
-    output:
-        json=FIELD_COMPAT_JSON,
-        csv=FIELD_COMPAT_CSV,
-        fig=FIELD_COMPAT_FIG,
-    params:
-        gene_paths=lambda w: {m: FIELD_GENE.format(field=w.field, model=m) for m in MODEL_LIST},
-        baseline_paths=lambda w: {b: FIELD_BASELINE.format(field=w.field, method=b) for b in COMPAT_BASELINES},
-        n_perm=config.get("compat_n_perm", 10000),
-        min_chars=config.get("compat_min_abstract_chars", 300),
-        seed=config.get("compat_seed", 0),
-    script:
-        "../scripts/idea_compatibility_field.py"
-
-
 # ── aggregation ──────────────────────────────────────────────────────────
 rule fields_all:
     input:
-        expand(FIELD_COMPAT_JSON, field=FIELD_LIST, **field_compat_params),
-        expand(FIELD_COMPAT_FIG, field=FIELD_LIST, **field_compat_params),
+        expand(FIELD_SBERT, field=FIELD_LIST),
+        expand(FIELD_GENE, field=FIELD_LIST, model=MODEL_LIST),

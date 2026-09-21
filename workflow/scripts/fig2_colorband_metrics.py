@@ -5,7 +5,7 @@ For one A-B pair decoded at the 13 grid points along the edge (weights on B =
 
   mix_t      SBERT projection of the decoded abstract onto the A->B axis,
              dot(d - A, B - A) / |B - A|^2 (same statistic as
-             exps/2026-07-02-simplex-kwgrid/pair_axis_metrics.py; not clipped)
+             workflow/scripts/pair_axis_metrics.py; not clipped)
   copy_rate  fraction of the abstract's word tokens that occur verbatim in
              either source lead (same tokeniser as pair_axis_copyrate.py)
   kw         the decoded keyword string
@@ -17,10 +17,10 @@ script needs neither the GPU decodes nor the corpus. SBERT (all-mpnet-base-v2) r
 Dual mode: driven by Snakemake (workflow/rules/fig2_pacs_clustering.smk) or
 
     python workflow/scripts/fig2_colorband_metrics.py \
-        --corners exps/2026-07-02-simplex-kwgrid/corners_pairCSML_00.json \
-        --decodes exps/2026-07-02-simplex-kwgrid/results/absfollow_pairCSML_00_pairaxis.json \
-        --icae    exps/2026-07-02-simplex-kwgrid/results/absfollow_pairCSML_00_pairaxis_icae.json \
-        --out     exps/2026-07-02-simplex-kwgrid/results/colorband_pairCSML_00_pairaxis.json
+        --corners data/pair_axis/corners_pairCSML_00.json \
+        --decodes data/pair_axis/results/absfollow_pairCSML_00_pairaxis.json \
+        --icae    data/pair_axis/results/absfollow_pairCSML_00_pairaxis_icae.json \
+        --out     data/pair_axis/results/colorband_pairCSML_00_pairaxis.json
 """
 import argparse
 import json

@@ -9,7 +9,7 @@
 # gitignored so your machine's paths never land in git. Nine keys are read with a
 # hard `config[...]` and must be present or Snakemake fails at parse time:
 #
-#     data_dir  paper_dir  aps_paper_table  openalex_paper_table
+#     data_dir  aps_paper_table  openalex_paper_table
 #     openalex_abstracts  mistral_checkpoint_path  qwen_checkpoint_path
 #     shard_size  gpu_ids
 #
@@ -20,8 +20,7 @@
 
 # ── Core paths ───────────────────────────────────────────────────────────
 data_dir: "data/"               # everything the workflow reads/writes lives here
-paper_dir: "paper/iclr2026/"    # the manuscript that paper_assets feeds
-figs_dir: "figs"                  # where the generated .tex tables land
+figs_dir: "results/figs"       # generated tables and figures; nothing here is tracked
 
 # ── Source corpora ───────────────────────────────────────────────────────
 # APS is licensed data: request the corpus from APS, then preprocess it into a

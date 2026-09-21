@@ -30,7 +30,7 @@
 #      snakemake actpatch_judged -j1   # the above plus the naming/judging panel
 from os.path import join as j
 
-ACT = "exps/2026-09-18-gene-vs-activation"
+ACT = "data/actpatch"
 ACT_RES = j(ACT, "results")
 ACT_ARMS = ["gene", "act"]
 ACT_ENV = ("set -a; source .env 2>/dev/null; set +a; "
@@ -44,8 +44,8 @@ wildcard_constraints:
 # ── Configuration sweep: which layer, how many slots, mean or last token ──────
 rule act_layer_sweep:
     input:
-        script=j(ACT, "layer_sweep.py"),
-        common=j(ACT, "act_common.py"),
+        script=j(SCRIPTS, "layer_sweep.py"),
+        common=j(SCRIPTS, "act_common.py"),
     output:
         j(ACT_RES, "layer_sweep.json"),
     params:
@@ -53,14 +53,14 @@ rule act_layer_sweep:
     resources:
         gpu=1,
     shell:
-        ACT_ENV + f"python {ACT}/layer_sweep.py --n {{params.n}} --out {{output}}"
+        ACT_ENV + f"python {SCRIPTS}/layer_sweep.py --n {{params.n}} --out {{output}}"
 
 
 # ── Identification: decode 500 abstracts per arm, then retrieve the source ───
 rule act_decode:
     input:
-        script=j(ACT, "decode_compare.py"),
-        common=j(ACT, "act_common.py"),
+        script=j(SCRIPTS, "decode_compare.py"),
+        common=j(SCRIPTS, "act_common.py"),
     output:
         j(ACT_RES, "decodes_{arm}.json"),
     params:
@@ -68,7 +68,7 @@ rule act_decode:
     resources:
         gpu=1,
     shell:
-        ACT_ENV + f"python {ACT}/decode_compare.py --arm {{wildcards.arm}} "
+        ACT_ENV + f"python {SCRIPTS}/decode_compare.py --arm {{wildcards.arm}} "
         "--n {params.n} --out {output}"
 
 
@@ -77,18 +77,18 @@ rule act_decode:
 rule act_decode_score:
     input:
         decodes=expand(j(ACT_RES, "decodes_{arm}.json"), arm=ACT_ARMS),
-        script=j(ACT, "score_compare.py"),
+        script=j(SCRIPTS, "score_compare.py"),
     output:
         j(ACT_RES, "score_compare.json"),
     shell:
-        f"python {ACT}/score_compare.py --arms {' '.join(ACT_ARMS)} --out {{output}}"
+        f"python {SCRIPTS}/score_compare.py --arms {' '.join(ACT_ARMS)} --out {{output}}"
 
 
 # ── Midpoints: does averaging two vectors gain similarity to both sources ────
 rule act_midpoints:
     input:
-        script=j(ACT, "midpoint_compare.py"),
-        common=j(ACT, "act_common.py"),
+        script=j(SCRIPTS, "midpoint_compare.py"),
+        common=j(SCRIPTS, "act_common.py"),
     output:
         j(ACT_RES, "midpoints_{arm}.json"),
     params:
@@ -96,7 +96,7 @@ rule act_midpoints:
     resources:
         gpu=1,
     shell:
-        ACT_ENV + f"python {ACT}/midpoint_compare.py --arm {{wildcards.arm}} "
+        ACT_ENV + f"python {SCRIPTS}/midpoint_compare.py --arm {{wildcards.arm}} "
         "--n {params.n} --out {output}"
 
 
@@ -105,25 +105,25 @@ rule act_midpoints:
 rule act_midpoint_score:
     input:
         midpoints=expand(j(ACT_RES, "midpoints_{arm}.json"), arm=ACT_ARMS),
-        script=j(ACT, "midpoint_score.py"),
+        script=j(SCRIPTS, "midpoint_score.py"),
     output:
         j(ACT_RES, "midpoint_score.json"),
     shell:
-        f"python {ACT}/midpoint_score.py --arms {' '.join(ACT_ARMS)} "
+        f"python {SCRIPTS}/midpoint_score.py --arms {' '.join(ACT_ARMS)} "
         f"--decode-dir {ACT_RES} --out {{output}}"
 
 
 # ── PACS node means: decode the 28 node means in both representations ────────
 rule act_nodes:
     input:
-        script=j(ACT, "arith_decode.py"),
-        common=j(ACT, "act_common.py"),
+        script=j(SCRIPTS, "arith_decode.py"),
+        common=j(SCRIPTS, "act_common.py"),
     output:
         j(ACT_RES, "arith_nodes_{arm}.json"),
     resources:
         gpu=1,
     shell:
-        ACT_ENV + f"python {ACT}/arith_decode.py --arm {{wildcards.arm}} --out {{output}}"
+        ACT_ENV + f"python {SCRIPTS}/arith_decode.py --arm {{wildcards.arm}} --out {{output}}"
 
 
 # Names each decoded continuation with an LLM that is NOT on the judge panel, so the
@@ -131,25 +131,25 @@ rule act_nodes:
 rule act_node_names:
     input:
         nodes=expand(j(ACT_RES, "arith_nodes_{arm}.json"), arm=ACT_ARMS),
-        script=j(ACT, "arith_name.py"),
+        script=j(SCRIPTS, "arith_name.py"),
     output:
         j(ACT_RES, "arith_m1.json"),
     shell:
         "set -a; source .env 2>/dev/null; set +a; "
-        f"python {ACT}/arith_name.py --out {{output}}"
+        f"python {SCRIPTS}/arith_name.py --out {{output}}"
 
 
 rule act_node_judge:
     input:
         names=j(ACT_RES, "arith_m1.json"),
-        script=j(ACT, "arith_{metric}.py"),
+        script=j(SCRIPTS, "arith_{metric}.py"),
     output:
         j(ACT_RES, "arith_{metric}.json"),
     wildcard_constraints:
         metric="m3|m4",
     shell:
         "set -a; source .env 2>/dev/null; set +a; "
-        f"python {ACT}/arith_{{wildcards.metric}}.py --out {{output}}"
+        f"python {SCRIPTS}/arith_{{wildcards.metric}}.py --out {{output}}"
 
 
 # ── Targets ──────────────────────────────────────────────────────────────────

@@ -69,7 +69,7 @@ if "snakemake" in sys.modules:
 elif len(sys.argv) > 2:
     in_json, out_tex = sys.argv[1], sys.argv[2]
 else:
-    in_json = "exps/2026-06-11-recipe-fusion/results/recipe_fusion.json"
+    in_json = "data/recipe_fusion/results/recipe_fusion.json"
     out_tex = "figs/recipe_fusion.tex"
 
 Path(out_tex).write_text(build(json.load(open(in_json))))

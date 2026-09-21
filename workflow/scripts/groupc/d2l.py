@@ -24,7 +24,7 @@ os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 L, R, LAT = 36, 8, 512
 
 # The verbatim 2-3 word field prompt behind every Doc2LoRA cluster label in the manuscript
-# (exps/2026-06-11-baseline-trees/decode_fullrank_field23.py).
+# (workflow/scripts/decode_fullrank_field23.py).
 FIELD23_PROMPT = (
     "In 2 to 3 words, name the scientific field that all of these documents "
     "belong to. Reply with only the field name."

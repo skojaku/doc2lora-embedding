@@ -1,4 +1,4 @@
-# Benchmark uncertainty: per-unit score pools + bootstrap CIs (exps/2026-06-10-uncertainty).
+# Benchmark uncertainty: per-unit score pools + bootstrap CIs (data/uncertainty).
 #
 # Every headline number (collab AUC / next-paper AUC / topic macro-F1 / S2AND B3-F1) is a single-seed
 # point estimate. These rules dump the PAIRED per-unit evaluation scores (same units across all methods)
@@ -18,8 +18,8 @@
 # kron only for mistral (gemma/qwen APS kron was never part of the matrix — score_pool_field skips it if absent).
 from os.path import join as j
 
-UNC = "exps/2026-06-10-uncertainty"
-S2U = "exps/2026-06-09-s2and"
+UNC = "data/uncertainty"
+S2U = "data/s2and"
 POOLS = j(UNC, "pools")
 
 # field tasks (collab/next-paper/topic): encoders available per field
@@ -77,7 +77,7 @@ rule unc_pool_field:
         field="|".join(UNC_FIELD_ENC),
         enc="gemma|qwen|mistral",
     shell:
-        f'CUDA_VISIBLE_DEVICES="" python {UNC}/score_pool_field.py {{wildcards.field}} {{wildcards.enc}}'
+        f'CUDA_VISIBLE_DEVICES="" python {SCRIPTS}/score_pool_field.py {{wildcards.field}} {{wildcards.enc}}'
 
 
 rule unc_pool_s2and:
@@ -97,7 +97,7 @@ rule unc_pool_s2and:
         ds="|".join(UNC_S2AND),
         enc="|".join(UNC_S2AND_ENC),
     shell:
-        f'CUDA_VISIBLE_DEVICES="" python {UNC}/score_pool_s2and.py {{wildcards.ds}} {{wildcards.enc}}'
+        f'CUDA_VISIBLE_DEVICES="" python {SCRIPTS}/score_pool_s2and.py {{wildcards.ds}} {{wildcards.enc}}'
 
 
 def _unc_pool_targets():
@@ -124,7 +124,7 @@ rule unc_bootstrap:
     resources:
         mem_gb=40,
     shell:
-        f"python {UNC}/bootstrap.py {{params.nboot}}"
+        f"python {SCRIPTS}/bootstrap.py {{params.nboot}}"
 
 
 # LaTeX tables from the bootstrap summary (\input-ed by paper/iclr2026/main.tex):

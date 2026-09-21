@@ -26,7 +26,7 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 
-sys.path.insert(0, "exps/2026-06-09-kron-adapter")
+sys.path.insert(0, "data/kron")
 from kron import KronAdapter  # noqa: E402
 
 

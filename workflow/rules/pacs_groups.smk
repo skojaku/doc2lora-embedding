@@ -1,7 +1,7 @@
 # PACS concept hierarchy (the node set every cluster-labelling table is built on).
 #
 # In the development repository this step was only reachable from a sub-Snakefile
-# inside exps/2026-05-28-concept-analogy-aps (written for a Docker mount), so its
+# inside data/pacs (written for a Docker mount), so its
 # two outputs looked like frozen artifacts. They are inputs to the manuscript's
 # label chain (baseline_trees) and to the incoherent-cluster control, so the step
 # is wired here instead:
@@ -17,7 +17,7 @@
 # builds; the legacy `gemma_mean_pooled.npz` name it used has no producing rule.
 from os.path import join as j
 
-CA_DIR = "exps/2026-05-28-concept-analogy-aps"
+CA_DIR = "data/pacs"
 CA_RESULTS = j(CA_DIR, "results")
 CA_CONFIG = j(CA_DIR, "config.yaml")
 
@@ -66,7 +66,7 @@ rule ca_render_config:
 rule ca_build_groups:
     input:
         cfg=CA_CONFIG,
-        script=j(CA_DIR, "scripts", "build_groups.py"),
+        script=j(SCRIPTS, "build_groups.py"),
         emb=j(EMB_DIR, "gemma_norm_lora_emb.npz"),
         paper_text=j(APS_DIR, "paper_text.parquet"),
         paper_table=config["aps_paper_table"],

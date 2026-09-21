@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Lease one GPU with enough FREE memory, pin CUDA_VISIBLE_DEVICES, run the command, release.
 #
-# Unlike exps/2026-06-09-s2and/gpu_run.sh (which requires a GPU to be nearly idle, <6 GB *used*),
+# Unlike workflow/scripts/gpu_run.sh (which requires a GPU to be nearly idle, <6 GB *used*),
 # this leaser looks at memory.FREE, so it still works when another user parks a resident service
 # (e.g. an ollama server) on every card.  Locks live in a shared lock dir so parallel Snakemake
 # jobs never land on the same GPU.

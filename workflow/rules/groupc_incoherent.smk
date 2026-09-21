@@ -10,7 +10,7 @@
 #   incoh_decode  -> incoh_labels.json      same 2-3 word field prompt: real / control / norm-matched
 #   incoh_score   -> incoh_scores.json + figs/incoherent_control.{tex,pdf}
 #
-# The real arm is re-extracted here (not read from exps/2026-06-11-baseline-trees) so both arms go
+# The real arm is re-extracted here (not read from data/labels) so both arms go
 # through one code path; the manuscript's own label artifacts are left untouched.
 #
 # RUN: snakemake groupc_incoherent -j4 --rerun-triggers mtime
@@ -26,8 +26,8 @@ INC_SBERT_N = config.get("incoh_n_members_sbert", 200)
 INC_JUDGES = config.get("incoh_use_judges", True)
 INC_SBERT_MODEL = config.get("compat_sbert_model", "sentence-transformers/all-mpnet-base-v2")
 
-BT = "exps/2026-06-11-baseline-trees"
-CA = "exps/2026-05-28-concept-analogy-aps/results"
+BT = "data/labels"
+CA = "data/pacs/results"
 
 INC_CLUSTERS = j(INC_DIR, "clusters.json")
 INC_LABELS = j(INC_DIR, "incoh_labels.json")

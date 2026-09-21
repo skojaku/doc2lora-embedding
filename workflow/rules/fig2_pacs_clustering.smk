@@ -25,12 +25,12 @@
 # RUN: snakemake fig2
 from os.path import join as j
 
-FIG2_BT = "exps/2026-06-11-baseline-trees"
-FIG2_SKG = "exps/2026-07-02-simplex-kwgrid"
+FIG2_BT = "data/labels"
+FIG2_SKG = "data/pair_axis"
 FIG2_PAIR_SET = config.get("fig2_pair_set", "pairCSML_00")   # the pair shown in the table
 FIG2_STRATUM = config.get("fig2_stratum", "L1")               # the stratum plotted in (e), (f)
 FIG2_T2L_SPACE = config.get("fig2_t2l_space", "e1")           # T2L embedding position: e0 gte, e1 TaskEncoder, e2 LoRA factors
-FIG2_T2L_MIDPOINTS = j("exps/2026-09-18-t2l-baseline", "results", f"midpoints_t2l_{FIG2_T2L_SPACE}.json")
+FIG2_T2L_MIDPOINTS = j("data/t2l", "results", f"midpoints_t2l_{FIG2_T2L_SPACE}.json")
 FIG2_T2L_CACHE = j(FIG2_SKG, "results", f"pair_axis_t2l_{FIG2_T2L_SPACE}_pairaxis.json")
 
 FIG2_DECODES = j(FIG2_SKG, "results", f"absfollow_{FIG2_PAIR_SET}_pairaxis.json")
@@ -44,14 +44,48 @@ FIG2_TABLE = j(config.get("figs_dir", "figs"), "mixing_decode.tex")
 # titles/DOIs. all-mpnet-base-v2 on CPU. The corner spec carries the paper ids
 # and DOIs; the two optional params are fallbacks for a spec without them, read
 # only when the files exist on this machine (manifest = ids, APS text = DOIs).
+# ── The one curated pair Tab. mixing-decode shows ───────────────────────────
+# The 250 pairs of simplex_kwgrid are a stratified random draw; this is a single
+# hand-picked pair (a statistical-mechanics paper and a quantum-error-correction
+# paper) whose corners ship with the workflow, decoded by the same two scripts on
+# the same 13-point grid. It sits here rather than in simplex_kwgrid.smk because
+# its set name is outside that file's L1..L5 wildcard pattern.
+rule fig2_decode_curated:
+    input:
+        corners = ancient(j(SCRIPTS, f"corners_{FIG2_PAIR_SET}.json")),
+        script = j(SCRIPTS, "decode_absfollow.py"),
+        prompts = j(SCRIPTS, "psens_prompts.py"),
+    output:
+        FIG2_DECODES,
+    resources:
+        gpu = 1,
+    shell:
+        KG_ENV + " " + KG_GPU +
+        " env SRC_KW=1 KWTAG=_pairaxis PAIR_EDGE=1 python {input.script} " + FIG2_PAIR_SET
+
+
+rule fig2_decode_curated_icae:
+    input:
+        corners = ancient(j(SCRIPTS, f"corners_{FIG2_PAIR_SET}.json")),
+        script = j(SCRIPTS, "decode_absfollow_icae.py"),
+        prompts = j(SCRIPTS, "psens_prompts.py"),
+    output:
+        FIG2_DECODES_ICAE,
+    resources:
+        gpu = 1,
+    shell:
+        KG_ENV + " " + KG_GPU +
+        " env SRC_KW=1 KWTAG=_pairaxis PAIR_EDGE=1 python {input.script} " + FIG2_PAIR_SET
+
+
 # Inputs and output are all tracked in git, and a fresh checkout stamps them with
 # arbitrary mtimes -- so without ancient() this CPU+SBERT job re-runs on a clone
 # purely to rewrite a file that is already correct.
 rule fig2_colorband_metrics:
     input:
-        corners = ancient(j(FIG2_SKG, f"corners_{FIG2_PAIR_SET}.json")),
-        decodes = ancient(FIG2_DECODES),
-        icae = ancient(FIG2_DECODES_ICAE),
+        corners = ancient(j(SCRIPTS, f"corners_{FIG2_PAIR_SET}.json")),
+        decodes = FIG2_DECODES,
+        icae = FIG2_DECODES_ICAE,
     output:
         metrics = FIG2_BAND_METRICS,
     params:
@@ -80,8 +114,8 @@ rule fig2_t2l_edge_metrics:
 rule fig2_mixing_table:
     input:
         band_json = FIG2_BAND_METRICS,
-        decodes = ancient(FIG2_DECODES),
-        icae = ancient(FIG2_DECODES_ICAE),
+        decodes = FIG2_DECODES,
+        icae = FIG2_DECODES_ICAE,
     output:
         tex = FIG2_TABLE,
     script:

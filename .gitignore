@@ -1,6 +1,6 @@
-# This repository tracks reproduction PRIMITIVES only: code, rules, manuscript
-# sources, the artifact manifest. Everything a rule can regenerate, and every
-# large artifact that lives on Zenodo, stays out.
+# This repository tracks reproduction PRIMITIVES only: the workflow, the scripts
+# it calls, the libraries they import, and the documentation. Everything a rule
+# can regenerate stays out.
 #
 # NOTE: git does not treat a trailing `#` as a comment, so every comment here is
 # on its own line.
@@ -10,72 +10,19 @@
 workflow/config.yaml
 .env
 
-# ── Data: fetched or generated, never committed ──────────────────────────
-# The Zenodo manifest and this directory's README are primitives.
+# ── Everything a rule writes ─────────────────────────────────────────────
+# data/ is the single output root: corpora you fetch, embeddings, adapters,
+# score pools, decodes, and the generated tables and figures under results/.
+# The Zenodo manifest, this directory's README, and the bundled sample corpus
+# are primitives.
 data/*
 !data/ARTIFACTS.tsv
 !data/README.md
+!data/sample/
+results/
 dist/
 
-# ── Workflow outputs under exps/ ─────────────────────────────────────────
-# The scripts are tracked; everything they emit is not.
-exps/**/*.json
-exps/**/*.jsonl
-exps/**/*.csv
-exps/**/*.parquet
-exps/**/*.npz
-exps/**/*.npy
-exps/**/*.pt
-exps/**/*.pdf
-exps/**/*.png
-exps/**/*.log
-exps/**/results/
-exps/**/proc/
-exps/**/pools/
-exps/**/data/
-# ...except the label table the manuscript quotes verbatim,
-!exps/2026-06-11-baseline-trees/label_comparison_si.tex
-# ...and the caches the figure and table rules read. Each is a small CPU-side
-# summary of an expensive GPU or LLM-judge run: tracking them is what lets
-# `snakemake fig2` redraw Fig. cluster-labels and Tab. mixing-decode on a laptop,
-# from a fresh clone, without re-running the decodes behind them.
-!exps/2026-06-11-baseline-trees/wiki_leads.json
-!exps/2026-06-11-baseline-trees/abstraction_walk.json
-!exps/2026-06-11-baseline-trees/abstraction_angles.json
-!exps/2026-06-11-baseline-trees/qwen_fullrank_field23.json
-!exps/2026-06-11-baseline-trees/length_vs_breadth.csv
-!exps/2026-06-11-baseline-trees/label_eval_metric1.json
-!exps/2026-06-11-baseline-trees/label_eval_metric4.json
-!exps/2026-07-02-simplex-kwgrid/corners_pairCSML_00.json
-!exps/2026-07-02-simplex-kwgrid/psens_edge_summary.json
-!exps/2026-07-02-simplex-kwgrid/results/
-!exps/2026-07-02-simplex-kwgrid/results/pair_axis_metrics_pairaxis.json
-!exps/2026-07-02-simplex-kwgrid/results/pair_axis_copyrate_pairaxis_L1.json
-!exps/2026-07-02-simplex-kwgrid/results/pair_axis_copyrate_pairaxis_L5.json
-!exps/2026-07-02-simplex-kwgrid/results/absfollow_pairCSML_00_pairaxis.json
-!exps/2026-07-02-simplex-kwgrid/results/absfollow_pairCSML_00_pairaxis_icae.json
-!exps/2026-07-02-simplex-kwgrid/results/colorband_pairCSML_00_pairaxis.json
-!exps/2026-07-02-simplex-kwgrid/results/pair_axis_t2l_e1_pairaxis.json
-
-# ── LaTeX build products ─────────────────────────────────────────────────
-# figs/*.tex and paper/iclr2026/hierarchy_rows.tex ARE tracked: the rules
-# overwrite them in place, so a reader can diff a rebuild against the
-# published numbers.
-paper/**/main.pdf
-paper/**/*.aux
-paper/**/*.log
-paper/**/*.out
-paper/**/*.bbl
-paper/**/*.blg
-paper/**/*.fls
-paper/**/*.fdb_latexmk
-paper/**/*.run.xml
-paper/**/*.xdv
-paper/**/*.synctex.gz
-figs/*.aux
-figs/*.log
-
-# ── Snakemake / Python / editors ─────────────────────────────────────────
+# ── Python / Snakemake / editors ─────────────────────────────────────────
 .snakemake/
 logs/
 __pycache__/

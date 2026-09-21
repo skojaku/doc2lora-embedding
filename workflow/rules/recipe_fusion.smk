@@ -16,7 +16,7 @@ rule recipe_fusion_decode:
     resources:
         gpu=1,
     script:
-        "../../exps/2026-06-11-recipe-fusion/recipe_fusion.py"
+        "../../workflow/scripts/recipe_fusion.py"
 
 rule tab_recipe_fusion:
     input:

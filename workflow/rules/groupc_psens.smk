@@ -18,7 +18,7 @@ PS_K = config.get("psens_k", 8)
 PS_UNITS = config.get("psens_n_units", 40)
 PS_SEED = config.get("psens_seed", 0)
 PS_SBERT = config.get("compat_sbert_model", "sentence-transformers/all-mpnet-base-v2")
-PS_MEANS = j("exps/2026-06-11-baseline-trees", "qwen_fullrank_means.npz")   # frozen artifact
+PS_MEANS = j("data/labels", "qwen_fullrank_means.npz")   # frozen artifact
 
 PS_SCORES = j(PS_DIR, "psens_scores.json")
 PS_ROWS = j(PS_DIR, "psens_rows.parquet")

@@ -41,6 +41,7 @@ DEFAULTS = {
     "openalex_master_paper_table": "/data/datasets/openalex/preprocessed/paper_table.csv",
     "openalex_prep_base": "/data/datasets/openalex/preprocessed",
     "data_dir": "data/",
+    "icae_base_model": "mistralai/Mistral-7B-Instruct-v0.2",
 }
 
 
@@ -160,3 +161,14 @@ if __name__ == "__main__":       # `python workflow/scripts/bench_data.py` print
         src = ("env" if os.environ.get(k.upper()) else
                "config" if config().get(k) else "default")
         print(f"{k:32s} {path(k):60s} [{src}]")
+
+
+# Where a chain WRITES. The scripts all live in one directory now, so a script can
+# no longer take "next to me" to mean "my results": this is the one place that
+# answers where a chain's outputs go. Override per chain with $<TOPIC>_OUT, or move
+# the whole tree with `data_dir` in workflow/config.yaml.
+def out_dir(topic: str) -> Path:
+    env = os.environ.get(f"{topic.upper()}_OUT")
+    base = Path(env) if env else ROOT / data_dir() / topic
+    base.mkdir(parents=True, exist_ok=True)
+    return base

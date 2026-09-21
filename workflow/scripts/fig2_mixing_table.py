@@ -11,9 +11,9 @@ caption (with the two papers' titles) lives in the manuscript.
 Dual mode: driven by Snakemake (workflow/rules/fig2_pacs_clustering.smk) or
 
     python workflow/scripts/fig2_mixing_table.py \
-        --band    exps/2026-07-02-simplex-kwgrid/results/colorband_pairCSML_00_pairaxis.json \
-        --decodes exps/2026-07-02-simplex-kwgrid/results/absfollow_pairCSML_00_pairaxis.json \
-        --icae    exps/2026-07-02-simplex-kwgrid/results/absfollow_pairCSML_00_pairaxis_icae.json \
+        --band    data/pair_axis/results/colorband_pairCSML_00_pairaxis.json \
+        --decodes data/pair_axis/results/absfollow_pairCSML_00_pairaxis.json \
+        --icae    data/pair_axis/results/absfollow_pairCSML_00_pairaxis_icae.json \
         --out     figs/mixing_decode.tex
 """
 import argparse
@@ -104,7 +104,7 @@ if "snakemake" in sys.modules:
     main(snakemake.input["band_json"], snakemake.input["decodes"], snakemake.input["icae"],
          snakemake.output["tex"])
 elif __name__ == "__main__":
-    SKG = "exps/2026-07-02-simplex-kwgrid"
+    SKG = "data/pair_axis"
     ap = argparse.ArgumentParser()
     ap.add_argument("--band", default=f"{SKG}/results/colorband_pairCSML_00_pairaxis.json")
     ap.add_argument("--decodes", default=f"{SKG}/results/absfollow_pairCSML_00_pairaxis.json")

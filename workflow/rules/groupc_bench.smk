@@ -2,7 +2,7 @@
 # and temporal hardening (#72).  ONE chain, because all three write the same kind of row.
 #
 # Why a separate pool directory: adding methods changes the coverage intersection that defines the
-# evaluation units, so folding them into exps/2026-06-10-uncertainty/pools would silently move the
+# evaluation units, so folding them into data/uncertainty/pools would silently move the
 # manuscript's Table 1 numbers.  Everything here lands in data/groupc/bench/, and Table 1 keeps its
 # byte-identical inputs.
 #
@@ -21,8 +21,8 @@ FIGS_DIR = config.get("figs_dir", "figs")
 GCB_DIR = j("data", "groupc", "bench")
 GCB_POOLS = j(GCB_DIR, "pools")
 BENCH_ROOT = config.get("bench_root", j("data", "bench"))
-ICAE_BENCH = "exps/2026-06-21-icae-benchmark"
-GA_DIR = "exps/2026-06-10-general-adapter"
+ICAE_BENCH = "data/icae"
+GA_DIR = "data/general_adapter"
 EMGEMMA_VENV = ".venv-emgemma"
 
 GCB_FIELDS = config.get("gcb_fields", ["aps", "economics", "psychology"])
