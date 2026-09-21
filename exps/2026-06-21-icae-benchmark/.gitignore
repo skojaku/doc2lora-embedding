@@ -1,0 +1,7 @@
+# heavy / regeneratable artifacts — not tracked
+pool_slots.npy
+pool_pids.npy
+adapter_icae.pt
+log_*.txt
+__pycache__/
+*.pyc

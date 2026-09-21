@@ -1,0 +1,7 @@
+\section*{Reproducibility Statement}
+\label{sec:repro}
+
+All experiments can be fully reproduced using the code, configurations, and Snakemake workflow included with this submission. 
+The workflow covers every result and figure in the manuscript. The main results and manuscript figures are generated from the released \texttt{SakanaAI/doc-to-lora} checkpoints. 
+Cluster-label comparisons and incoherent-cluster controls are judged by a panel of five language models from different providers, ensuring that no single model or naming convention dominates the scoring. The models are accessed via established APIs such as Google Vertex AI and OpenRouter. Importantly, no model judges its own output, and no label is rewritten by another model, so the scoring process is independent and unbiased.
+While the external judge models are versioned proprietary endpoints and may change over time, scoring within a fixed panel is deterministic and reproducible, i.e.,  inputs are presented in a stable order, and responses are cached, ensuring that repeated runs produce identical outcomes. Any label overlap analysis is model-free and fully reproducible from the released outputs.

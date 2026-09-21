@@ -1,0 +1,59 @@
+\section{Methods}
+\label{sec:method}
+
+\subsection{Doc-to-LoRA hypernetwork}
+\label{sec:doc2lora}
+
+\doctolora is a hypernetwork that converts a document $x$ to an LoRA adapter in one forward pass.
+Specifically, a document $x$ is first sent to the base LLM, which produces a sequence of hidden states for all tokens in the document.  
+These hidden states are then sent to a perceiver transformer~\citep{jaegle2021perceiver}, which compresses into a fixed-size tensor $\mathcal{U} \in \mathbb{R}^{n_L \times n_R \times n_d}$, where $n_L$ is the number of layers in the base LLM, $n_R$ is the number of rank slots, and $n_d$ is the dimension of the hidden states.
+This fixed-size tensor $\mathcal{U}$ is then sent to an MLP followed by row-wise $L_2$ normalization, generating another fixed-size tensor $\mathcal{V} \in \mathbb{R}^{n_L \times n_R \times n_d}$.
+Finally, a linear head $f_{\mathrm{dec},\ell}$ maps $\mathcal{V}_{\ell}$ to the LoRA adapter matrices, independently for each layer and with no weight sharing.
+
+The resulting LoRA adapter consists of a pair of matrices $\matrix{A}_{\ell} \in \mathbb{R}^{m_\ell \times n_R}$ and $\matrix{B}_{\ell} \in \mathbb{R}^{n_R \times k_\ell}$ for each layer $\ell$, where $n_R$ is the rank of the LoRA adapter. 
+These matrices $\matrix{A}_{\ell}$ and $\matrix{B}_{\ell}$ are then added to the linear layer $\matrix{W}_{\ell}$ of the MLP in the base LLM during inference.
+Loading the resulting updates $\{\Delta\matrix{W}_{\ell}\}$ into the frozen base model yields a document-conditioned model that answers as if $x$ were in its context. We use the public SakanaAI checkpoint on Qwen3-4B~\citep{qwen3-2025} in the main text and report other base models in Appendix~\ref{app:benchmarks}.
+The faithfulness of the decoded output depends on the hypernetwork, as evaluated by \citet{sakana2024doc2lora}.
+We take this as given and focus on the embedding space itself. 
+Paraphrasing the prompt changes the wording but rarely the content (Appendix~\ref{app:prompt-sensitivity}).
+
+\subsection{\doctolora embedding}
+\label{sec:doc2lora-embedding}
+
+We leverage the post-MLP tensor $\mathcal{V}$ as the document embedding, as the following linear head $f_{\mathrm{dec},\ell}$ maps it directly to the LoRA adapter matrices, preserving linear equivariance:
+\begin{equation}
+f_{\mathrm{dec},\ell}\Big(\sum_i w_i\, \matrix{V}_{i,\ell}\Big) = \sum_i w_i\, f_{\mathrm{dec},\ell}(\matrix{V}_{i,\ell}).
+\label{eq:linearity}
+\end{equation}
+Thus, averaging or interpolating embeddings is equivalent to the same operation on the adapters, a property that is lost if using the nonlinear pre-MLP matrices. Each $\mathcal{V}$ is a third-order tensor, with $\ell$-th slice $\matrix{V}_{\ell} \in \mathbb{R}^{n_R \times n_d}$ containing $L_2$-normalized, $n_d{=}512$-dimensional unit vectors per $n_R{=}8$ rank (\figref{method}).
+
+When restricted to search, we can downsize the hidden tensor $\mathcal{V}$ while preserving much similarity information by taking the mean over the rank dimension $n_R$ (Spearman $\rho$ of $.97$--$.98$ between the full-tensor and pooled cosine similarities for Qwen3-4B, on $500$ documents from each evaluation corpus (Appendix~\ref{app:data})).
+In our paper, we use the mean-pooled tensor as embedding for similarity search discussed in \secref{similarity}, while use the full tensor for generation tasks. Unless otherwise noted, we use the full tensor.
+
+\subsection{Decoding documents and interpolants}
+\label{sec:decode}
+
+We decode an embedding by expanding $\mathcal{V}$ into a LoRA adapter and querying the frozen base model with no document in the prompt.
+We illustrate with two short recipes, an Italian cacio e pepe and a Japanese kake udon, encoded with the Mistral-7B hypernetwork and decoded in full-rank mode (Appendix~\ref{app:recipe-fusion}).
+With the Italian adapter loaded, the query ``What cheese is used?'' returns ``The cheese used in this recipe is Pecorino Romano.''
+Next, we interpolate the two embeddings as $\mathcal{V}(\alpha)=(1-\alpha)\mathcal{V}_A+\alpha\mathcal{V}_B$, where $\mathcal{V}_A$ and $\mathcal{V}_B$ are the embeddings of the two recipes.
+The endpoints $\alpha=0$ and $\alpha=1$ decode to cacio e pepe and kake udon, each with minor paraphrases.
+At $\alpha=0.5$ the decode is ``Kake Udon with Creamy Parmesan Sauce.''
+The dish coats udon noodles in a melted-cheese sauce and seasons them with mirin and soy.
+Parmesan replaces Pecorino Romano and heavy cream appears in neither source.
+We decode greedily, and the examples we report are single runs. 
+
+\subsection{Adapting the geometry with a bijective transform}
+\label{sec:kron-method}
+
+The public hypernetwork is trained for generation.
+We refine its tensor for search without retraining the base LLM and hypernetwork by adding a linear layer $g_\theta$ on top of the embedding, with a bijectivity constraint.
+More specifically, for each layer $\ell$, we transform $\matrix{V}_{\ell}\in\mathbb{R}^{n_R\times n_d}$ by
+\begin{align}
+   \label{eq:transform}
+   \matrix{V}'_{\ell} = g_\theta(\matrix{V}_{\ell}) = a_\ell \matrix{V}_{\ell} \matrix{C},
+\end{align}
+where $a_\ell>0$ controls the scaling of layer $\ell$, and $\matrix{C}\in\mathbb{R}^{n_d\times n_d}$ is an invertible linear matrix.
+To ensure invertibility, we factor $\matrix{C}$ as $\matrix{R} \text{diag}(\sigma)$, where $\matrix{R}\in\mathbb{R}^{n_d\times n_d}$ is a rotation matrix and $\text{diag}(\sigma)\in\mathbb{R}^{n_d\times n_d}$ is a diagonal matrix with positive entries $\sigma_i>0$ (Appendix~\ref{app:bijective}).
+This parametrization uses only $n_L + n_d^2$ parameters ($262$k for Qwen) and brings the embedding on par with dedicated text encoders on the similarity benchmarks we tested.
+We train $g_\theta$ with InfoNCE~\citep{oord2018infonce} on citation pairs (Appendix~\ref{app:bijective}) using the OpenAlex citation pairs (negatives in-batch, as in \texttt{SPECTER2}), with the base model frozen.

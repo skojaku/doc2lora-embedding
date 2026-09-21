@@ -1,0 +1,22 @@
+{
+ "physics concept": {
+  "angle_deg": 46.308341995293276,
+  "coord1d": 0.02432135343551634
+ },
+ "biochemistry": {
+  "angle_deg": 82.0,
+  "coord1d": 0.5308131814002992
+ },
+ "fruit": {
+  "angle_deg": 64.2443149261141,
+  "coord1d": 0.27884647846221927
+ },
+ "famous person": {
+  "angle_deg": 22.41962131792536,
+  "coord1d": -0.31467779874801644
+ },
+ "patent (LED)": {
+  "angle_deg": 8.0,
+  "coord1d": -0.5193032145500184
+ }
+}

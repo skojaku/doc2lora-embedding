@@ -1,52 +1,307 @@
+"""Reproduction workflow for "Doc2LoRA Provides Decodable Representations of
+Scientific Ideas" (paper/iclr2026).
+
+This workflow is trimmed to the dependency closure of the assets the manuscript
+actually reads -- the main text and its appendices (SI), and nothing else.
+Exploration chains that never reached the PDF (simplex fusion, topological
+holes, the idea-gene GA, cross-domain analogy) live in the development repository
+and were deliberately left out.
+
+Entry points
+------------
+    snakemake -n paper_assets     # dry run: prints the whole DAG, runs nothing
+    snakemake paper_assets -j4    # rebuild every manuscript asset a rule owns
+    snakemake paper -j4           # the above, then compile paper/iclr2026/main.pdf
+
+Step 0 is mandatory: copy workflow/config.template.yaml to workflow/config.yaml
+and set the paths for your machine. See README.md and REPRODUCE.md.
+"""
+
+import os
 from os.path import join as j
 
 configfile: "workflow/config.yaml"
 
-# Import utilities
 include: "workflow/workflow_utils.smk"
 
-#EMB_DIR = j(DATA_DIR, "{data}", "embeddings")
-#emb_params ={
-#    "directed": ["undirected", "directed"],
-#    "window_length": [10],
-#    "model_name": ["node2vec", "deepwalk", "adjspec", "leigenmap"],
-#    "dim": [64],
-#}
-#emb_params2 ={
-#    "directed": ["undirected", "directed"],
-#    "window_length": [10],
-#    "model_name": ["node2vec", "deepwalk", "adjspec", "leigenmap"],
-#    "dim": [64],
-#}
-#emb_paramspace = to_union_paramspace([emb_params, emb_param2])
-#EMB_FILE = j(EMB_DIR, f"paper_{emb_paramspace.wildcard_pattern}.npz")
+# ── Checkpoints ──────────────────────────────────────────────────────────
+# Gemma resolves from the config value first, then $DOC2LORA_CKPT.
+CHECKPOINT_PATH = config.get("checkpoint_path") or os.environ.get("DOC2LORA_CKPT")
+MISTRAL_CHECKPOINT_PATH = config["mistral_checkpoint_path"]
+QWEN_CHECKPOINT_PATH = config["qwen_checkpoint_path"]
 
-
+# ── Paths ────────────────────────────────────────────────────────────────
 DATA_DIR = config["data_dir"]
+APS_DIR = j(DATA_DIR, "aps")
+EMB_DIR = j(APS_DIR, "embeddings")
+POOLING_CSV = j(APS_DIR, "pooling_spearman.csv")
 
 PAPER_DIR = config["paper_dir"]
-PAPER_SRC, SUPP_SRC = [j(PAPER_DIR, f) for f in ("main.tex", "supp.tex")]
-PAPER, SUPP = [j(PAPER_DIR, f) for f in ("main.pdf", "supp.pdf")]
+PAPER_SRC = j(PAPER_DIR, "main.tex")
+PAPER = j(PAPER_DIR, "main.pdf")
 
-rule all:
+# Several rule files read FIGS_DIR from the including scope.
+FIGS_DIR = config.get("figs_dir", "figs")
+
+# ── Sub-workflows (closure of the manuscript's assets) ───────────────────
+# Shared backbone: corpora -> genes -> transforms -> per-task scores
+include: "workflow/rules/pacs_groups.smk"       # PACS concept hierarchy (node set for labelling)
+include: "workflow/rules/fields.smk"            # economics / psychology corpora + genes
+include: "workflow/rules/baselines.smk"         # SPECTER2 / INSTRUCTOR / EmbeddingGemma / GTE
+include: "workflow/rules/collab_scores.smk"     # co-authorship benchmark pairs
+include: "workflow/rules/idea_compatibility.smk"  # APS SBERT abstracts + mobility flow
+include: "workflow/rules/kron_adapter.smk"      # per-field invertible citation adapter
+include: "workflow/rules/general_adapter.smk"   # one general OpenAlex adapter (genkron)
+include: "workflow/rules/s2and.smk"             # author-name disambiguation benchmark
+# Manuscript assets
+include: "workflow/rules/uncertainty.smk"       # Tab. similarity + Tab. encoder-matrix
+include: "workflow/rules/baseline_trees.smk"    # Tab. hierarchy-labels + Tab. label-eval
+include: "workflow/rules/abstraction_walk.smk"  # Wikipedia radius walk (Fig. cluster-labels panel d)
+include: "workflow/rules/groupc_fidelity.smk"   # only fid_sample is on the SI path (see REPRODUCE.md)
+include: "workflow/rules/groupc_psens.smk"      # Tab. prompt-sensitivity (App.)
+include: "workflow/rules/groupc_incoherent.smk" # Tab. incoherent-control (App.)
+# Chains whose numbers are TYPED into the manuscript rather than \input-ed, so they
+# sit behind their own targets and not in `paper_assets` (see REPRODUCE.md):
+include: "workflow/rules/bench.smk"             # benchmark subsets the two chains below read
+include: "workflow/rules/icae.smk"              # ICAE baseline embeddings
+include: "workflow/rules/groupc_efficiency.smk" # Tab. "What an embedding costs" (Sec. results)
+include: "workflow/rules/groupc_bench.smk"      # temporal-hardening claims (App. datasets, #72)
+include: "workflow/rules/t2l.smk"               # Text-to-LoRA hypernetwork-adapter baseline
+include: "workflow/rules/actpatch.smk"          # the base model's own hidden states as a decoder
+include: "workflow/rules/recipe_fusion.smk"     # the recipe blend quoted in App. recipe-fusion
+
+# The pair-axis interpolation study behind Sec. results' two-way composition and
+# App. prompt-sensitivity's edge sweep. Include it ONCE and before fig2: Snakemake
+# does not deduplicate includes, and a second one aborts the workflow with
+# "The name kg_pairs is already used". t2l.smk above reads its corner specs, which
+# are regenerable artifacts, so without this include `snakemake t2l_all` resolves
+# in a warm tree and dead-ends on a fresh clone.
+include: "workflow/rules/simplex_kwgrid.smk"    # Fig. cluster-labels panels (e), (f) + Fig. psens-edge
+include: "workflow/rules/fig2_pacs_clustering.smk"  # Fig. cluster-labels + Tab. mixing-decode
+
+# ── Manuscript targets ───────────────────────────────────────────────────
+#
+# `paper_assets` builds exactly what paper/iclr2026 \input's or \includegraphics's
+# and that a rule owns. Adding a rule here is a claim that the manuscript reads
+# its output. Assets with no rule (Fig. method, Fig. cluster-labels) are listed
+# in REPRODUCE.md with the command that makes them.
+
+rule paper_assets:
     input:
-        PAPER, SUPP
+        # Tab. similarity        -> figs/similarity_benchmarks.tex
+        # Tab. encoder-matrix    -> figs/encoder_matrix.tex
+        rules.uncertainty_all.input,
+        # Tab. hierarchy-labels  -> paper/iclr2026/hierarchy_rows.tex
+        # plus the cluster-label report behind Tab. label-eval. The LLM judge
+        # panel (metric 4) is NOT pulled in here; run `label_eval` for it.
+        rules.baseline_trees.input,
+        # Tab. prompt-sensitivity -> figs/prompt_sensitivity.tex   (App., #73)
+        rules.groupc_psens.input,
+        # Tab. incoherent-control -> figs/incoherent_control.tex   (App., #101)
+        rules.groupc_incoherent.input,
+        # Fig. cluster-labels     -> figs/pacs-clustering.pdf
+        # Tab. mixing-decode      -> figs/mixing_decode.tex           (Sec. results)
+        rules.fig2.input,
+        # Fig. psens-edge -> figs/psens_edge_curves.pdf               (App.)
+        # The same rule also writes figs/prompt_sensitivity_edge.tex, whose numbers
+        # the appendix states in prose rather than \input-ing.
+        rules.kg_psens_all.input,
+        # Spearman rho quoted in Sec. methods (mean-over-rank vs full tensor).
+        # Emits the CSV only; the number is transcribed into the text by hand.
+        POOLING_CSV,
+
 
 rule paper:
     input:
-        PAPER_SRC, SUPP_SRC
+        rules.paper_assets.input,
+        PAPER_SRC,
     params:
-        paper_dir = PAPER_DIR
+        paper_dir=PAPER_DIR,
     output:
-        PAPER, SUPP
+        PAPER,
     shell:
         "cd {params.paper_dir}; make"
 
 
-# rule some_data_processing:
-    # input:
-        # "data/some_data.csv"
-    # output:
-        # "data/derived/some_derived_data.csv"
-    # script:
-        # "workflow/scripts/process_some_data.py"
+# ── Convenience targets (each sub-workflow on its own) ───────────────────
+
+rule all:
+    input:
+        j(APS_DIR, "paper_text.parquet"),
+
+rule fields:
+    input:
+        rules.fields_all.input,
+
+rule baselines:
+    input:
+        rules.baselines_all.input,
+
+rule kron:
+    input:
+        rules.kron_all.input,
+
+rule general:
+    input:
+        rules.ga_all.input,
+
+rule leakage:
+    input:
+        rules.ga_leakage.input,
+
+rule s2and:
+    input:
+        rules.s2and_all.input,
+
+rule uncertainty:
+    input:
+        rules.uncertainty_all.input,
+
+rule idea_compatibility:
+    input:
+        rules.idea_compatibility_all.input,
+
+rule efficiency:
+    input:
+        rules.groupc_efficiency.input,
+
+rule temporal_hardening:
+    input:
+        rules.groupc_bench.input,
+
+rule figure2:
+    input:
+        rules.fig2.input,
+
+rule t2l:
+    input:
+        rules.t2l_all.input,
+
+rule recipe_fusion:
+    input:
+        rules.recipe_fusion_all.input,
+
+rule pair_axis:
+    input:
+        rules.kg_all.input,
+
+rule all_embeddings:
+    input:
+        j(EMB_DIR, "gemma_norm_lora_emb.npz"),
+        j(EMB_DIR, "mistral_norm_lora_emb.npz"),
+        j(EMB_DIR, "qwen_norm_lora_emb.npz"),
+
+
+# ── Data preparation ────────────────────────────────────────────────────
+
+rule prepare_aps_text:
+    input:
+        aps_papers=config["aps_paper_table"],
+        openalex_papers=config["openalex_paper_table"],
+        openalex_abstracts=config["openalex_abstracts"],
+    output:
+        paper_text=j(APS_DIR, "paper_text.parquet"),
+        report=j(APS_DIR, "matching_report.md"),
+    script:
+        "workflow/scripts/prepare_aps_text.py"
+
+
+# The same table keyed on `paper_id` instead of `aps_paper_id`. The label chains
+# (prep_nodes, vec2text) expect that spelling; upstream the file existed on disk
+# with no producing rule. Verified to be a pure column rename: identical row
+# count, identical ids.
+
+rule aps_text_pid:
+    input:
+        paper_text=j(APS_DIR, "paper_text.parquet"),
+    output:
+        paper_text_pid=j(APS_DIR, "paper_text_pid.parquet"),
+    run:
+        import pandas as pd
+        df = pd.read_parquet(input.paper_text)
+        df = df.rename(columns={"aps_paper_id": "paper_id"})
+        df["paper_id"] = df["paper_id"].astype("int64")
+        df.to_parquet(output.paper_text_pid, index=False)
+
+
+# ── Mean-pooled idea genes (one rule per encoder) ────────────────────────
+
+rule embed_aps_papers:
+    input:
+        paper_text=j(APS_DIR, "paper_text.parquet"),
+    output:
+        embeddings=j(EMB_DIR, "gemma_norm_lora_emb.npz"),
+    params:
+        checkpoint_path=CHECKPOINT_PATH,
+        shard_dir=j(EMB_DIR, "shards_norm_lora_emb"),
+        shard_size=config["shard_size"],
+        gpu_ids=config["gpu_ids"],
+    resources:
+        gpu=1,
+    script:
+        "workflow/scripts/embed_aps_papers.py"
+
+
+rule embed_aps_papers_mistral:
+    input:
+        paper_text=j(APS_DIR, "paper_text.parquet"),
+    output:
+        embeddings=j(EMB_DIR, "mistral_norm_lora_emb.npz"),
+    params:
+        checkpoint_path=MISTRAL_CHECKPOINT_PATH,
+        shard_dir=j(EMB_DIR, "mistral_shards_norm_lora_emb"),
+        shard_size=config["shard_size"],
+        gpu_ids=config["gpu_ids"],
+    resources:
+        gpu=1,
+    script:
+        "workflow/scripts/embed_aps_papers_mistral.py"
+
+
+rule embed_aps_papers_qwen:
+    input:
+        paper_text=j(APS_DIR, "paper_text.parquet"),
+    output:
+        embeddings=j(EMB_DIR, "qwen_norm_lora_emb.npz"),
+    params:
+        checkpoint_path=QWEN_CHECKPOINT_PATH,
+        shard_dir=j(EMB_DIR, "qwen_shards_norm_lora_emb"),
+        shard_size=config["shard_size"],
+        gpu_ids=config["gpu_ids"],
+    resources:
+        gpu=1,
+    script:
+        "workflow/scripts/embed_aps_papers_qwen.py"
+
+
+# ── Pooling validation (mean-over-rank vs full tensor, App.) ─────────────
+
+rule pooling_validation:
+    input:
+        paper_text=j(APS_DIR, "paper_text.parquet"),
+    output:
+        csv=POOLING_CSV,
+    params:
+        n_docs=config.get("pooling_n_docs", 500),
+        seed=config.get("pooling_seed", 42),
+    resources:
+        gpu=1,
+    script:
+        "workflow/scripts/pooling_validation.py"
+
+
+# ── Full-rank genes for a paper subset (used by the decode chains) ───────
+
+rule embed_papers_full:
+    input:
+        paper_text=j(APS_DIR, "paper_text.parquet"),
+        paper_ids=j(APS_DIR, "embeddings", "{subset}_paper_ids.txt"),
+    output:
+        embeddings=j(EMB_DIR, "doc2lora_full_{subset}.npz"),
+    params:
+        checkpoint_path=CHECKPOINT_PATH,
+        gpu_ids=config["gpu_ids"],
+    resources:
+        gpu=1,
+    script:
+        "workflow/scripts/embed_papers_full.py"

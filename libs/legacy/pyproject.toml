@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "doc2lora-legacy"
+version = "0.1"
+description = "Frozen full doc2lora API preserved for the exps/ research sandboxes. Use the `doc2lora` package for new code."
+requires-python = ">=3.9"
+dependencies = [
+    "torch",
+    "numpy",
+    "einops",
+]
+
+[tool.setuptools]
+packages = ["doc2lora_legacy"]

@@ -1,0 +1,298 @@
+{
+ "set": "pairCSML_00",
+ "grid_den": 12,
+ "sbert": "all-mpnet-base-v2",
+ "corners": {
+  "A": {
+   "name": "Statistical mechanics of learning from examples",
+   "doi": "10.1103/PhysRevA.45.6056",
+   "paper_id": 66911
+  },
+  "B": {
+   "name": "Good quantum error-correcting codes exist",
+   "doi": "10.1103/PhysRevA.54.1098",
+   "paper_id": 73326
+  }
+ },
+ "methods": {
+  "doc2lora": [
+   {
+    "k": 0,
+    "weight_b": 0.0,
+    "mix_t": 0.09134411066770554,
+    "copy_rate": 0.6434108527131783,
+    "kw": "generalization error, learning curves, smooth networks, replica method, phase transition"
+   },
+   {
+    "k": 1,
+    "weight_b": 0.08333333333333333,
+    "mix_t": 0.12743626534938812,
+    "copy_rate": 0.6,
+    "kw": "generalization error, neural networks, statistical mechanics, learning curves, smooth networks"
+   },
+   {
+    "k": 2,
+    "weight_b": 0.16666666666666666,
+    "mix_t": 0.12988817691802979,
+    "copy_rate": 0.5775862068965517,
+    "kw": "generalization error, neural networks, statistical mechanics, learning curves, smooth functions"
+   },
+   {
+    "k": 3,
+    "weight_b": 0.25,
+    "mix_t": 0.1428934931755066,
+    "copy_rate": 0.6083333333333333,
+    "kw": "generalization error, learning curves, neural networks, statistical mechanics, smooth functions"
+   },
+   {
+    "k": 4,
+    "weight_b": 0.3333333333333333,
+    "mix_t": 0.39549490809440613,
+    "copy_rate": 0.5875,
+    "kw": "generalization error, learning, quantum networks, statistical mechanics, smooth functions"
+   },
+   {
+    "k": 5,
+    "weight_b": 0.4166666666666667,
+    "mix_t": 0.44716382026672363,
+    "copy_rate": 0.5267175572519084,
+    "kw": "quantum learning, unitary model, error rate, smooth unitaries, learning threshold"
+   },
+   {
+    "k": 6,
+    "weight_b": 0.5,
+    "mix_t": 0.873815655708313,
+    "copy_rate": 0.5723684210526315,
+    "kw": "quantum error correction, unitary mapping, threshold error, error rate, quantum computing"
+   },
+   {
+    "k": 7,
+    "weight_b": 0.5833333333333334,
+    "mix_t": 0.8401251435279846,
+    "copy_rate": 0.5075757575757576,
+    "kw": "quantum error correction, unitary mapping, error threshold, quantum channels, coherence preservation"
+   },
+   {
+    "k": 8,
+    "weight_b": 0.6666666666666666,
+    "mix_t": 0.845386803150177,
+    "copy_rate": 0.47101449275362317,
+    "kw": "quantum error correction, unitary encoding, error tolerance, asymptotic rate, quantum codes"
+   },
+   {
+    "k": 9,
+    "weight_b": 0.75,
+    "mix_t": 0.8860676288604736,
+    "copy_rate": 0.5378787878787878,
+    "kw": "quantum error correction, unitary encoding, quantum state, error tolerance, code rate"
+   },
+   {
+    "k": 10,
+    "weight_b": 0.8333333333333334,
+    "mix_t": 0.8632355332374573,
+    "copy_rate": 0.5943396226415094,
+    "kw": "quantum error-correcting codes, unitary encoding, quantum maps, error correction, rate bounds"
+   },
+   {
+    "k": 11,
+    "weight_b": 0.9166666666666666,
+    "mix_t": 0.872383713722229,
+    "copy_rate": 0.5514018691588785,
+    "kw": "quantum error correction, unitary encoding, quantum subspace, error tolerance, binary entropy"
+   },
+   {
+    "k": 12,
+    "weight_b": 1.0,
+    "mix_t": 0.8709762096405029,
+    "copy_rate": 0.5217391304347826,
+    "kw": "quantum error correction, unitary encoding, quantum subspace, error tolerance, code rate"
+   }
+  ],
+  "icae": [
+   {
+    "k": 0,
+    "weight_b": 0.0,
+    "mix_t": 0.1269506961107254,
+    "copy_rate": 0.8048780487804879,
+    "kw": "statistical mechanics, learning from feedforward neural networks, stochastic-network model, realizable rules, unrealizable rules, generalization error, scaling law, independent weights, classification models"
+   },
+   {
+    "k": 1,
+    "weight_b": 0.08333333333333333,
+    "mix_t": 0.08822227269411087,
+    "copy_rate": 0.7777777777777778,
+    "kw": "statistical mechanics, learning from feedforward neural networks, stochastic-mechanical framework, high-temperature limit, annealed Gibbs distribution, asymptotic learning curves, realizable models, general realizable models, classification"
+   },
+   {
+    "k": 2,
+    "weight_b": 0.16666666666666666,
+    "mix_t": 0.09189783036708832,
+    "copy_rate": 0.79,
+    "kw": "statistical mechanics, learning from feedforward neural networks, stochastic-mechanical model, Gibbs distribution, replica exchange annealing technique, realizable and unrealizable rules, high-temperature approximation, asymptotic forms, general realizable learning models"
+   },
+   {
+    "k": 3,
+    "weight_b": 0.25,
+    "mix_t": 0.12075638025999069,
+    "copy_rate": 0.72,
+    "kw": "statistical mechanics, feedforward neural networks, learning, Gibbs-free energy, stochastic models, high-temperature approximation, asymptotic learning curves"
+   },
+   {
+    "k": 4,
+    "weight_b": 0.3333333333333333,
+    "mix_t": 0.41159048676490784,
+    "copy_rate": 0.6865671641791045,
+    "kw": "quantum mechanical learning, statistical-mechanical frameworks, stochastic feedforward neural networks, high-temperature approximation, generalized perceptron theory, annealed and unannealed models, limitations, asymptotic results"
+   },
+   {
+    "k": 5,
+    "weight_b": 0.4166666666666667,
+    "mix_t": 0.7539520859718323,
+    "copy_rate": 0.6323529411764706,
+    "kw": "quantum mechanics, error-correcting codes, learning from examples, unitary random code, qubits, asymptotic rates, generalized error-correcting codes, asymptotic bounds"
+   },
+   {
+    "k": 6,
+    "weight_b": 0.5,
+    "mix_t": 0.9107528924942017,
+    "copy_rate": 0.75,
+    "kw": "quantum error-correcting codes, unitary codes, asymptotic qubit error rate, asymptotic rate, upper bounds"
+   },
+   {
+    "k": 7,
+    "weight_b": 0.5833333333333334,
+    "mix_t": 0.9260423183441162,
+    "copy_rate": 0.75,
+    "kw": "quantum error-correcting codes, unitary quantum error-correcting code, asymptotic rate, asymptotic error probability, two-qubit case"
+   },
+   {
+    "k": 8,
+    "weight_b": 0.6666666666666666,
+    "mix_t": 0.8920179605484009,
+    "copy_rate": 0.6984126984126984,
+    "kw": "quantum error-correcting codes, unitary mapping, qubit, asymptotic rate, asymptotic bounds"
+   },
+   {
+    "k": 9,
+    "weight_b": 0.75,
+    "mix_t": 0.9216728210449219,
+    "copy_rate": 0.7123287671232876,
+    "kw": "quantum error-correcting codes, unitary mapping, qubits, subspace, decoherence, asymptotic rate, upper bounds"
+   },
+   {
+    "k": 10,
+    "weight_b": 0.8333333333333334,
+    "mix_t": 0.9336915612220764,
+    "copy_rate": 0.6984126984126984,
+    "kw": "quantum error-correcting codes, unitary mapping, qubits, subspace, decoherence, H(t)"
+   },
+   {
+    "k": 11,
+    "weight_b": 0.9166666666666666,
+    "mix_t": 0.941003143787384,
+    "copy_rate": 0.7272727272727273,
+    "kw": "quantum error-correcting codes, unitary mapping, qubits, subspace, asymptotic rate"
+   },
+   {
+    "k": 12,
+    "weight_b": 1.0,
+    "mix_t": 0.9260282516479492,
+    "copy_rate": 0.78125,
+    "kw": "quantum error-correcting codes, unitary mapping, qubits, subspace, quantum state space, encoding, decoherence, reconstruct, asymptotic rate"
+   }
+  ],
+  "incontext": [
+   {
+    "k": 0,
+    "weight_b": 0.0,
+    "mix_t": 0.4279378354549408,
+    "copy_rate": 0.6333333333333333,
+    "kw": "quantum neural networks, generalization error, statistical mechanics, quenched disorder, smooth transfer functions"
+   },
+   {
+    "k": 1,
+    "weight_b": 0.08333333333333333,
+    "mix_t": 0.45600780844688416,
+    "copy_rate": 0.6211180124223602,
+    "kw": "quantum error correction, statistical learning, generalization error, replica theory, spin-glass phases"
+   },
+   {
+    "k": 2,
+    "weight_b": 0.16666666666666666,
+    "mix_t": 0.5018630623817444,
+    "copy_rate": 0.6111111111111112,
+    "kw": "quantum neural networks, statistical mechanics, generalization error, error correction, quenched disorder"
+   },
+   {
+    "k": 3,
+    "weight_b": 0.25,
+    "mix_t": 0.4598596692085266,
+    "copy_rate": 0.6178343949044586,
+    "kw": "quantum neural networks, statistical mechanics, generalization error, quantum error correction, spin-glass phase"
+   },
+   {
+    "k": 4,
+    "weight_b": 0.3333333333333333,
+    "mix_t": 0.48439672589302063,
+    "copy_rate": 0.6441717791411042,
+    "kw": "quantum error correction, statistical learning, replica theory, generalization error, spin-glass phases"
+   },
+   {
+    "k": 5,
+    "weight_b": 0.4166666666666667,
+    "mix_t": 0.44465357065200806,
+    "copy_rate": 0.6153846153846154,
+    "kw": "quantum neural networks, statistical mechanics, generalization error, quantum error correction, spin-glass phases"
+   },
+   {
+    "k": 6,
+    "weight_b": 0.5,
+    "mix_t": 0.5159229636192322,
+    "copy_rate": 0.5723684210526315,
+    "kw": "quantum neural networks, statistical mechanics, generalization error, quantum error correction, quenched disorder"
+   },
+   {
+    "k": 7,
+    "weight_b": 0.5833333333333334,
+    "mix_t": 0.5028396248817444,
+    "copy_rate": 0.608433734939759,
+    "kw": "quantum error correction, statistical mechanics, generalization error, quenched disorder, spin-glass phase"
+   },
+   {
+    "k": 8,
+    "weight_b": 0.6666666666666666,
+    "mix_t": 0.4756351113319397,
+    "copy_rate": 0.6265060240963856,
+    "kw": "quantum error correction, statistical mechanics, generalization error, quenched disorder, phase transition"
+   },
+   {
+    "k": 9,
+    "weight_b": 0.75,
+    "mix_t": 0.4594690799713135,
+    "copy_rate": 0.5722543352601156,
+    "kw": "quantum spin-glass, generalization error, quenched disorder, error correction, neural quantum networks"
+   },
+   {
+    "k": 10,
+    "weight_b": 0.8333333333333334,
+    "mix_t": 0.4449361562728882,
+    "copy_rate": 0.5963855421686747,
+    "kw": "quantum spin-glass, neural learning, quenched disorder, error correction, generalization error"
+   },
+   {
+    "k": 11,
+    "weight_b": 0.9166666666666666,
+    "mix_t": 0.46174395084381104,
+    "copy_rate": 0.5734265734265734,
+    "kw": "quantum spin-glass, neural network learning, quenched disorder, decoherence robustness, error-correcting codes"
+   },
+   {
+    "k": 12,
+    "weight_b": 1.0,
+    "mix_t": 0.6267831921577454,
+    "copy_rate": 0.6094674556213018,
+    "kw": "quantum spin-glass, quenched disorder, error correction, decoherence, phase transition"
+   }
+  ]
+ }
+}

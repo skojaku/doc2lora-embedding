@@ -1,3 +1,208 @@
-# set the directories below and copy this file as `config.yaml`
-data_dir: "./data/"
-paper_dir: "./paper/current/"
+# Configuration for the Doc2LoRA reproduction workflow.
+#
+# STEP 0 OF REPRODUCTION -- copy this file and edit the paths:
+#
+#     cp workflow/config.template.yaml workflow/config.yaml
+#     $EDITOR workflow/config.yaml
+#
+# `Snakefile` does `configfile: "workflow/config.yaml"`, and that file is
+# gitignored so your machine's paths never land in git. Nine keys are read with a
+# hard `config[...]` and must be present or Snakemake fails at parse time:
+#
+#     data_dir  paper_dir  aps_paper_table  openalex_paper_table
+#     openalex_abstracts  mistral_checkpoint_path  qwen_checkpoint_path
+#     shard_size  gpu_ids
+#
+# Everything else has an in-code default; the values below are the ones the
+# manuscript was produced with, so leave them alone unless you mean to deviate.
+# Lines marked "<-- set me" point at data or checkpoints that are not in this
+# repository. README.md says where to get each one.
+
+# ── Core paths ───────────────────────────────────────────────────────────
+data_dir: "data/"               # everything the workflow reads/writes lives here
+paper_dir: "paper/iclr2026/"    # the manuscript that paper_assets feeds
+figs_dir: "figs"                  # where the generated .tex tables land
+
+# ── Source corpora ───────────────────────────────────────────────────────
+# APS is licensed data: request the corpus from APS, then preprocess it into a
+# table with columns (paper_id, doi, title, abstract, year, journal, pacs).
+aps_paper_table: "/path/to/aps/preprocessed/paper_table.csv"            # <-- set me
+aps_citation_net: "/path/to/aps/preprocessed/citation_net.npz"          # <-- set me
+aps_author_net: "/path/to/aps/preprocessed/paper_author_net.npz"        # <-- set me
+aps_category_table: "/path/to/aps/preprocessed/category_table.csv"          # <-- set me
+aps_paper_category_table: "/path/to/aps/preprocessed/paper_category_table.csv"  # <-- set me
+# OpenAlex snapshot tables (openalex.org/data-dump), preprocessed the same way.
+openalex_paper_table: "/path/to/openalex/preprocessed/paper_table.csv"  # <-- set me
+openalex_abstracts: "/path/to/openalex/preprocessed/abstracts.parquet"  # <-- set me
+openalex_master_paper_table: "/path/to/openalex/preprocessed/paper_table.csv"  # <-- set me
+# Directory holding the full OpenAlex tables (paper_table.csv, abstracts.parquet,
+# citation_net.npz) that the general-adapter triplet sampling reads.
+openalex_prep_base: "/path/to/openalex/preprocessed"                     # <-- set me
+# Per-field OpenAlex slices (economics / psychology) used by the robustness rows.
+fields_prep_base: "/path/to/openalex-fields/preprocessed"               # <-- set me
+
+# ── Doc2LoRA checkpoints ─────────────────────────────────────────────────
+# The hypernetwork checkpoints (Gemma-2-2B, Mistral-7B, Qwen3-4B). The Gemma path
+# also resolves from $DOC2LORA_CKPT if this key is absent.
+checkpoint_path: "data/agent_assets/gemma_demo/checkpoint-80000/pytorch_model.bin"          # <-- set me
+mistral_checkpoint_path: "data/agent_assets/mistral_7b_d2l/checkpoint-20000/pytorch_model.bin"  # <-- set me
+qwen_checkpoint_path: "data/agent_assets/qwen_4b_d2l/checkpoint-20000/pytorch_model.bin"    # <-- set me
+# Some chains shell out instead of importing; they read these host-side copies.
+gemma_host_checkpoint_path: "data/agent_assets/gemma_demo/checkpoint-80000/pytorch_model.bin"
+mistral_host_checkpoint_path: "data/agent_assets/mistral_7b_d2l/checkpoint-20000/pytorch_model.bin"
+qwen_host_checkpoint_path: "data/agent_assets/qwen_4b_d2l/checkpoint-20000/pytorch_model.bin"
+# The doc-to-lora source tree (the hypernetwork implementation). Not vendored
+# here; clone it and point at its `src/`.
+doc_to_lora_src: "/path/to/doc-to-lora/src"                             # <-- set me
+hf_home: "data/agent_assets/hf_cache"
+
+# ── Compute / sharding ───────────────────────────────────────────────────
+gpu_ids: "0"           # comma-separated ids the embedding scripts may use, e.g. "0,1,2,3"
+shard_size: 10000      # APS papers per embedding shard
+baseline_trees_gpu: "0"
+
+# ── PACS concept hierarchy (the labelling node set) ──────────────────────
+pacs_min_group_size: 30        # drop PACS nodes with fewer papers
+pacs_min_text_length: 300      # drop papers with a too-short title+abstract
+
+# ── Mean-pooling validation (App.) ───────────────────────────────────────
+pooling_n_docs: 500
+pooling_seed: 42
+
+# ── Idea compatibility / APS text baselines ──────────────────────────────
+compat_sbert_model: "sentence-transformers/all-mpnet-base-v2"
+compat_sbert_shard_size: 20000
+compat_level: ["fine"]
+compat_topk: [300]
+compat_min_papers: 300
+compat_min_abstract_chars: 300
+compat_n_perm: 10000
+compat_seed: 0
+compat_baselines: ["specter2", "instructor"]
+
+# ── Multi-field robustness (economics / psychology) ──────────────────────
+FIELD_LIST: ["economics", "psychology"]
+MODELS: ["qwen", "gemma", "mistral"]
+field_cap: 0                  # 0 = embed the full corpus (no subsample)
+field_seed: 0
+field_min_text_length: 300
+field_shard_size: 10000
+field_max_length: 768         # p99 abstract is 745 tokens
+field_max_batch_tokens:       # token budget per batch; calibrated for a 48 GB GPU
+  qwen: 9216
+  gemma: 12288
+  mistral: 6144
+field_compat_level: ["sub"]
+field_compat_topk: [150]
+field_compat_min_papers: 1
+
+# ── Scientific-text baselines ────────────────────────────────────────────
+baseline_methods: ["specter2", "instructor", "embeddinggemma", "gte"]
+baseline_fields: ["economics", "psychology"]
+baseline_batch_size: 256
+emgemma_batch_size: 128        # EmbeddingGemma runs in its own venv, at its own batch size
+baseline_chunk_size: 20000
+
+# ── Invertible Kronecker adapters ────────────────────────────────────────
+kron_steps: 8000
+kron_gene_enc:
+  aps: ["gemma", "qwen", "mistral"]
+  economics: ["gemma", "qwen", "mistral"]
+  psychology: ["gemma", "qwen", "mistral"]
+
+# ── One general OpenAlex adapter (genkron) ───────────────────────────────
+ga_encoders: ["gemma", "qwen", "mistral"]
+ga_s2and: ["zbmath", "qian", "arnetminer", "pubmed", "kisti"]
+
+# ── Author-name disambiguation (AllenAI S2AND) ───────────────────────────
+s2and_datasets: ["zbmath", "qian", "arnetminer", "pubmed", "kisti"]
+s2and_encoders: ["gemma", "qwen", "mistral"]
+
+# ── Bootstrap confidence intervals -> the two similarity tables ──────────
+unc_nboot: 1000
+unc_table_enc: "qwen"          # encoder shown in the main-text table
+unc_field_enc:
+  economics: ["gemma", "qwen", "mistral"]
+  psychology: ["gemma", "qwen", "mistral"]
+  aps: ["gemma", "qwen", "mistral"]
+unc_s2and: ["zbmath", "qian", "arnetminer", "pubmed", "kisti"]
+unc_s2and_enc: ["gemma", "qwen", "mistral"]
+unc_s2and_best_enc:
+  zbmath: "qwen"
+  qian: "qwen"
+  arnetminer: "qwen"
+  pubmed: "qwen"
+  kisti: "qwen"
+
+# ── Decode-fidelity sample (only fid_sample is on the SI path) ───────────
+fid_n_papers: 200
+fid_seed: 0
+fid_min_abstract_chars: 400
+fid_conditions: ["d2l", "incontext", "mismatch", "prior"]
+fid_max_new_tokens: 160
+fid_n_examples: 3
+
+# ── Prompt-paraphrase sensitivity -> Tab. prompt-sensitivity (App.) ──────
+psens_families: ["label", "describe", "fusion"]
+psens_k: 8                     # paraphrases per family; index 0 is the reported prompt
+psens_n_units: 40
+psens_seed: 0
+
+# ── Incoherent-cluster control -> Tab. incoherent-control (App.) ─────────
+incoh_shards: 4                # GPU shards for the centroid extraction
+incoh_draws: 2                 # cross-chapter control clusters per real PACS node
+incoh_seed: 0
+incoh_n_titles: 12
+incoh_n_members_sbert: 200
+incoh_use_judges: true         # blinded LLM judge panel; needs $OPENROUTER_API_KEY
+
+# ── Cost of an embedding -> Tab. "What an embedding costs" (Sec. results) ─
+eff_methods: ["sbert", "specter2", "icae", "d2l-qwen", "d2l-mistral"]
+eff_corpus_size: 2200000       # papers the index-size projection assumes
+eff_n_docs: 256                # documents timed per method
+eff_pq_bytes: [1152, 288, 96]  # product-quantisation budgets compared
+eff_n_train: 50000
+eff_n_base: 50000
+eff_n_query: 2000
+
+# ── Temporal hardening / decontamination (App. datasets, #72) ────────────
+bench_root: "data/bench"       # benchmark-subset embeddings (the #63 slicer)
+gcb_fields: ["aps", "economics", "psychology"]
+gcb_new_encoders: ["embeddinggemma"]
+gcb_transform_methods: ["gene", "sbert", "specter2", "instructor", "embeddinggemma"]
+gcb_temporal_methods: ["gene", "sbert"]
+gcb_cutoff_year: 2018          # g_theta trained only on pre-cutoff citations
+gcb_topic_split_year: 2016     # topic classification train<=2016 / test>2016
+gcb_nboot: 500
+gcb_train_steps: 8000
+
+# ── ICAE baseline (in-context autoencoder) ───────────────────────────────
+icae_code_dir: "/path/to/ICAE/code/icae_v2"                    # <-- set me
+icae_weights: "/path/to/ICAE/weights/mistral_7b_ft_icae.safetensors"  # <-- set me
+icae_base_model: "mistralai/Mistral-7B-Instruct-v0.2"
+
+# ── Text-to-LoRA baseline (hypernetwork adapter) ─────────────────────────
+# T2L reads a task description with a frozen gte-large encoder and expands the
+# resulting vector into a LoRA. Its source tree is a separate project, like
+# doc-to-lora: clone it and point t2l_src at its src/.
+t2l_src: "text-to-lora/src"                                    # <-- set me
+t2l_label_cap: 2000            # members averaged per PACS node (matches doc2lora)
+t2l_sanity_docs: 60            # documents in the degeneracy check
+t2l_sanity_descs: 12           # task descriptions in the degeneracy check
+t2l_validity_n: 80             # held-in-task examples in the validity check
+
+# ── Pair-axis interpolation (Fig. cluster-labels (e),(f); App. edge prompts) ─
+kwgrid_pairs_per_stratum: 50   # corner pairs drawn per PACS-distance stratum
+skg_strata: ["L1", "L5"]       # strata carried into the manuscript's panels
+kwgrid_psens_prompts: [1, 2, 3]  # paraphrases of the edge decode instruction;
+                                 # prompt 0 is the manuscript's own wording
+kwgrid_psens_pairs: 20         # pairs per stratum in the paraphrase sweep
+
+# ── Figure: cluster labels and mixtures ──────────────────────────────────
+fig2_pair_set: "pairCSML_00"   # the pair decoded in Tab. mixing-decode
+fig2_stratum: "L1"             # the stratum plotted in panels (e), (f)
+fig2_t2l_space: "e1"           # T2L position: e0 gte, e1 TaskEncoder, e2 LoRA factors
+
+# ── Abstraction walk (Wikipedia radius sweep) ────────────────────────────
+abstraction_walk_gpu: "0"      # CUDA_VISIBLE_DEVICES for the decode
+vec2text_python: ".venv-vec2text/bin/python"   # isolated env for the inverter arm

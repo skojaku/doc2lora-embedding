@@ -1,0 +1,60 @@
+name: doc2lora
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      # PyTorch (cu124) — must be installed before flash-attn
+      - --extra-index-url https://download.pytorch.org/whl/cu124
+      - torch==2.6.0
+
+      # Core (pinned versions from NOTES.md)
+      - transformers==4.51.3
+      - einops
+      - jaxtyping
+      - bitsandbytes
+      - accelerate
+      - sentencepiece
+      - protobuf
+      - peft
+      - datasets
+      - wonderwords
+
+      # flash-attn: the batched Qwen gene extractor uses it. The upstream wheel
+      # must match torch 2.6.0+cu124 / cp310; installing from PyPI compiles it
+      # (slow but reliable), so it is listed separately in install.sh rather than
+      # here. See README.md -> Environment.
+      # - flash-attn==2.7.4.post1   # via install.sh (--no-build-isolation)
+
+      # Pipeline
+      - snakemake
+      - pulp
+
+      # Scientific
+      - numpy
+      - pandas
+      - pyarrow
+      - scipy
+      - matplotlib
+      - seaborn
+      - tqdm
+      - scikit-learn
+      - hdbscan
+      - faiss-cpu        # ANN index-size measurement (efficiency table)
+      - umap-learn
+      - rapidfuzz        # fuzzy label-overlap metric (cluster-label eval, issue #24)
+      - requests         # OpenRouter LLM-judge calls (cluster-label eval, issue #24)
+      - keybert          # faithful KeyLLM baseline (cluster-label eval, issue #24)
+      - sentence-transformers   # SBERT / GTE text baselines and every SBERT-based score
+      - inflect          # hyper_llm_modulator import chain (Text-to-LoRA baseline)
+      - torchmetrics     # same
+      - wandb            # same
+
+      # Notebooks
+      - ipykernel
+      - jupyter
+      - marimo
+
+      # Dev
+      - pre-commit

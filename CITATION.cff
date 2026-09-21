@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software or the doc2lora method, please cite it as below."
+title: "doc2lora-repro: reproduction workflow for Decodable Representations of Scientific Ideas"
+abstract: >-
+  Turn documents into compact LoRA-shaped adapters, do arithmetic on them
+  (average, interpolate, blend), and decode them back into text.
+type: software
+authors:
+  - family-names: Kojaku
+    given-names: Sadamori
+    email: skojaku@binghamton.edu
+    affiliation: Binghamton University
+    # TODO(issue #81): add the remaining paper authors before/at arXiv posting.
+repository-code: "https://github.com/skojaku/doc2lora-repro"
+url: "https://github.com/skojaku/doc2lora-repro"
+license: MIT
+version: "0.2.0"
+# TODO(issue #81): add `preferred-citation` (type: article), the arXiv `doi`,
+# and `date-released` once the preprint is posted, then bump `version`.

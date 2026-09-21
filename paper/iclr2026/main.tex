@@ -1,0 +1,149 @@
+\documentclass{article} % For LaTeX2e
+% iclr2027_conference.sty loads eso-pic, which pulls in xcolor with no options.
+% Our own \usepackage[...]{xcolor} below would then be an option clash on a cold
+% build, silently dropping `table` (\rowcolors, \colorbox{gray!25} in Table 1)
+% and the named color sets. Hand xcolor the options before anything loads it.
+\PassOptionsToPackage{usenames,dvipsnames,svgnames,table}{xcolor}
+\usepackage{iclr2027_conference}
+% Times fonts. Under pdfTeX use the classic `times` package; under XeTeX/LuaTeX
+% that package leaves Times bold undefined (TU/ptm/b/n), so \textbf silently
+% drops to medium weight. Use fontspec with the TeX Gyre Termes/Cursor clones
+% there, which carry a real bold. Math stays Computer Modern in both branches.
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage{times}
+\else
+  \usepackage{fontspec}
+  \setmainfont{texgyretermes}[
+    Extension = .otf, UprightFont = *-regular, BoldFont = *-bold,
+    ItalicFont = *-italic, BoldItalicFont = *-bolditalic]
+  \setmonofont{texgyrecursor}[
+    Extension = .otf, UprightFont = *-regular, BoldFont = *-bold,
+    ItalicFont = *-italic, BoldItalicFont = *-bolditalic]
+\fi
+
+%  custom packages by User
+\usepackage{graphicx}
+\graphicspath{{../../figs/}}
+\usepackage{afterpage}
+\usepackage{xspace}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, fit, calc}
+
+% Optional math commands from https://github.com/goodfeli/dlbook_notation.
+\input{math_commands.tex}
+
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{xcolor} % options passed at the top of the preamble; see the note there
+% Colored (not boxed) hyperlinks for a polished preprint (issue #46).
+\hypersetup{
+  colorlinks=true,
+  citecolor={MidnightBlue},
+  linkcolor={BrickRed},
+  urlcolor={MidnightBlue}
+}
+\usepackage{rotating}
+\usepackage{framed}
+% fvextra gives \begin{Verbatim} line breaking, so long recipe/prompt lines wrap
+% inside the shaded blocks instead of overflowing the margin.
+\usepackage{fvextra}
+% Shaded background for the verbatim recipe blocks (App.~\ref{app:recipe-fusion}).
+% Change the gray level (0 = black, 1 = white) to recolor.
+\definecolor{shadecolor}{gray}{0.94}
+
+% User defined
+\def\eg{e.g.,~}
+\def\ie{i.e.,~}
+\definecolor{d2lcolor}{HTML}{6C3FA0}% purple used for the D2L name
+\newcommand{\doctolora}{\textcolor{d2lcolor}{D2L}\xspace} % canonical name of the \doctolora embedding
+\def\matrix#1{{\mathbf{#1}}}
+\renewcommand{\secref}[1]{Section~\ref{sec:#1}}
+\renewcommand{\figref}[1]{Figure~\ref{fig:#1}}
+\newcommand{\tabref}[1]{Table~\ref{tab:#1}}
+
+% Space-efficient subsections: render each \subsection as a bold, numbered
+% run-in heading so the body text begins on the same line (no vertical break).
+% Numbers and \label/\ref are preserved, so every \secref still resolves.
+\usepackage{titlesec}
+\titleformat{\subsection}[runin]{\normalfont\bfseries}{\thesubsection}{0.5em}{}[.]
+\titlespacing*{\subsection}{0pt}{1.4ex plus .2ex minus .2ex}{0.8em}
+\newcommand{\placeholder}[1]{{\color{red}[\textbf{PLACEHOLDER:} #1]}}
+\newcommand{\tbd}{{\color{red}\textit{tbd}}} % placeholder for a table cell still being computed
+\newcommand{\std}[1]{{\scriptsize$\pm$#1}} % bootstrap standard deviation in tables
+
+\title{Doc2LoRA Provides Decodable Representations of Scientific Ideas}
+
+% This is an anonymous ICLR 2027 submission: with no [preprint] option and no
+% \iclrfinalcopy, the style ignores the \author block below and renders
+% "Anonymous authors / Paper under double-blind review" instead. For a
+% non-anonymous arXiv preprint, pass [preprint] to \usepackage{iclr2027_conference}
+% above. For camera-ready, use \iclrfinalcopy.
+
+\author{
+Sadamori Kojaku \\
+School of Systems Science and Industrial Engineering\\
+Binghamton University\\
+Binghamton, NY, USA \\
+\texttt{skojaku@binghamton.edu}
+\And
+Chand Sahil Mansuri \\
+School of Systems Science and Industrial Engineering\\
+Binghamton University\\
+Binghamton, NY, USA \\
+\texttt{cmansur1@binghamton.edu}
+\And
+Joel Zachariah \\
+School of Systems Science and Industrial Engineering\\
+Binghamton University\\
+Binghamton, NY, USA \\
+\texttt{jzachariah@binghamton.edu}
+}
+
+%\iclrfinalcopy % Uncomment for camera-ready version, but NOT for submission.
+\begin{document}
+
+\maketitle
+
+\input{sections/00-abstract}
+
+\input{sections/01-intro}
+\input{sections/03-methods}
+\input{sections/04-results}
+\input{sections/02-related-work}
+\input{sections/05-discussion}
+
+% ICLR 2027 requires an AI use statement; it sits at the end of the main text,
+% before the references, and does not count toward the page limit.
+\input{sections/05a-ai-use}
+
+% ICLR 2027 strongly encourages a Reproducibility Statement in the same spot:
+% end of the main text, before the references, outside the page limit.
+\input{sections/05b-reproducibility}
+
+% \section*{Author Contributions}
+
+% \section*{Acknowledgments}
+
+\bibliography{main}
+\bibliographystyle{iclr2027_conference}
+
+\appendix
+\input{sections/06-app-datasets}
+\input{sections/07-app-recipe-decoding}
+\input{sections/08-app-bijective-transforms}
+\input{sections/09-app-cluster-labels}
+\input{sections/10-app-actpatch}
+\input{sections/11-app-fusion-protocol}
+\input{sections/12-app-similarity-protocol}
+\input{sections/13-app-prompt-sensitivity}
+\input{sections/14-app-result-tables}
+
+\end{document}

@@ -1,0 +1,56 @@
+\documentclass[9pt]{article}
+\usepackage[landscape,a3paper,margin=1.2cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{ragged2e}
+\usepackage{ltablex}
+\keepXColumns
+\usepackage[T1]{fontenc}
+\definecolor{zebra}{gray}{0.90}
+\definecolor{headblue}{HTML}{D6E6F2}
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{4pt}
+\pagestyle{empty}
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+
+\begin{document}
+\footnotesize
+\noindent{\large\bfseries Decoded labels vs.\ actual PACS code --- full set}\par\medskip
+\rowcolors{2}{white}{zebra}
+\begin{tabularx}{\linewidth}{@{}l l Y Y Y Y Y r@{}}
+\toprule
+\textbf{PACS} & \textbf{lvl} & \textbf{Actual PACS} & \textbf{Doc2LoRA (text-free)} & \textbf{KeyLLM $\to$ label} & \textbf{ICAE} & \textbf{vec2text} & \textbf{$n$} \\
+\midrule\endhead
+\texttt{0} & field & General & Quantum field theory & Quantum thermodynamics\newline {\scriptsize\itshape\color{black!55} partial decoherence, thermalization, time-domain ergodicity, density matrix formalism} & Condensed matter & Quantum Physics & 65k \\
+\texttt{03} & div. & Quantum mechanics, field theories, and special relativity & Quantum optics & Quantum Optics\newline {\scriptsize\itshape\color{black!55} quantum states, entanglement, qubits, two-level atoms, cavity modes} & Quantum Optics & Quantum Physics & 25k \\
+\texttt{03.65} & sub. & Quantum mechanics & Quantum mechanics & Quantum Information\newline {\scriptsize\itshape\color{black!55} single-qubit decoherence, separable couplings, random matrix environment} & Open Quantum Systems & Quantum Physics & 8.1k \\
+\texttt{03.67} & sub. & Quantum information & Quantum information & Quantum computing\newline {\scriptsize\itshape\color{black!55} measurement-based quantum computing, AKLT state, spin-1 chain, linear optics} & Quantum Physics & Quantum Computing & 9.2k \\
+\texttt{05} & div. & Statistical physics, thermodynamics, and nonlinear dynamical systems & Statistical physics & Nonlinear dynamics\newline {\scriptsize\itshape\color{black!55} disturbance spreading, incommensurate systems, quasiperiodic systems} & Complex systems & Quantum Physics & 22k \\
+\texttt{05.40} & sub. & Fluctuation phenomena, random processes, noise, and Brownian motion & Statistical physics & Statistical Physics\newline {\scriptsize\itshape\color{black!55} bistable systems, probability density, colored noise, critical transitions} & Statistical physics & Stochastic processes & 4.5k \\
+\texttt{05.45} & sub. & Nonlinear dynamics and chaos & Nonlinear dynamics & Nonlinear dynamics\newline {\scriptsize\itshape\color{black!55} separatrix chaos, separatrix map, resonant Hamiltonian, chaotic layer} & Chaos theory & Nonlinear dynamics & 7.9k \\
+\texttt{2} & field & Classical physics & Nonlinear optics & Quantum Optics\newline {\scriptsize\itshape\color{black!55} nonlinear propagation, polarized light, degenerate energy levels, adiabatic} & Cavity QED & Neutron Optics & 33k \\
+\texttt{42} & div. & Optics & Quantum optics & Quantum Optics\newline {\scriptsize\itshape\color{black!55} photon antibunching, photonic molecules, weakly nonlinear cavities} & Quantum optics & Quantum Physics & 19k \\
+\texttt{42.50} & sub. & Quantum optics & Quantum optics & Quantum Optics\newline {\scriptsize\itshape\color{black!55} mesoscopic states, cavity-field states, atom-field interactions, squeezing} & Quantum Optics & Quantum Optics & 8.7k \\
+\texttt{42.65} & sub. & Nonlinear optics & Nonlinear optics & Photonics\newline {\scriptsize\itshape\color{black!55} solitons, symmetry breaking, photonic crystals, nonlinear optics, electro-optics} & Nonlinear Optics & Nonlinear Optics & 4.6k \\
+\texttt{47} & div. & Fluid dynamics & Fluid dynamics & Fluid dynamics\newline {\scriptsize\itshape\color{black!55} two-dimensional turbulence, freely decaying turbulence, vortex density} & Fluid dynamics & Fluid dynamics & 8.0k \\
+\texttt{47.20} & sub. & Fluid dynamics & Fluid dynamics & Fluid dynamics\newline {\scriptsize\itshape\color{black!55} bifurcation, thermocapillary liquid layers, dynamic instabilities} & Fluid dynamics & Fluid Dynamics & 1.3k \\
+\texttt{47.27} & sub. & Fluid dynamics & Fluid dynamics & Geophysical Fluid Dynamics\newline {\scriptsize\itshape\color{black!55} mean-field approximation, two-dimensional turbulence, Gaussian statistics} & Fluid dynamics & Fluid dynamics & 1.7k \\
+\texttt{3} & field & Condensed matter & Condensed matter physics & Condensed matter\newline {\scriptsize\itshape\color{black!55} t-J model, one-dimensional electron systems, electron-phonon coupling} & Condensed matter & Spectroscopy & 178k \\
+\texttt{71} & div. & Electronic structure of bulk materials & Condensed matter physics & Condensed matter\newline {\scriptsize\itshape\color{black!55} semiclassical action, dynamical mean-field theory, local lattice fluctuations} & Quantum Physics & Plasma Physics & 24k \\
+\texttt{71.10} & sub. & Theories and models of many-electron systems & Condensed matter physics & Condensed matter\newline {\scriptsize\itshape\color{black!55} Mott physics, spin fluctuations, strongly correlated electrons, dynamics} & Condensed matter & Condensed Matter & 4.5k \\
+\texttt{71.20} & sub. & Electronic structure of bulk materials & Condensed matter physics & Condensed matter\newline {\scriptsize\itshape\color{black!55} pyrochlore metals, electronic structure, density functional theory} & Condensed matter & Condensed Matter & 2.5k \\
+\texttt{75} & div. & Magnetic properties and materials & Condensed matter physics & Condensed matter\newline {\scriptsize\itshape\color{black!55} Quantum Monte Carlo, itinerant ferromagnetism, multi-orbital Hubbard model, sign} & Condensed matter & Spintronics & 26k \\
+\texttt{75.10} & sub. & General theory and models of magnetic ordering & Condensed matter physics & Condensed matter\newline {\scriptsize\itshape\color{black!55} square-lattice Heisenberg antiferromagnet, nearest-neighbor exchange} & Condensed matter & Quantum topology & 6.7k \\
+\texttt{75.30} & sub. & Magnetic properties and materials & Condensed matter physics & Condensed matter\newline {\scriptsize\itshape\color{black!55} metal-insulator transition, La1-xCaxMnO3, magnetic inhomogeneity, spin} & Condensed matter & Spintronics & 4.5k \\
+\texttt{6} & field & Elementary particles & Particle physics & Particle Physics\newline {\scriptsize\itshape\color{black!55} left-right symmetry, LHC, SU(2)\_L x SU(2)\_R x U(1)\_B-L, seesaw mechanism} & Particle physics & Particle Physics & 44k \\
+\texttt{11} & div. & General theory of fields and particles & Quantum field theory & Hadron Physics\newline {\scriptsize\itshape\color{black!55} 3+1-dimensional model, light-front Hamiltonian, spontaneous chiral symmetry} & Particle Physics & Quantum Physics & 14k \\
+\texttt{11.10} & sub. & General theory of fields and particles & Quantum field theory & Quantum Field Theory\newline {\scriptsize\itshape\color{black!55} (1+1)-dimensional, massive sine-Gordon field theory, Gaussian wavefunction} & Theoretical physics & Quantum Physics & 3.6k \\
+\texttt{11.15} & sub. & General theory of fields and particles & Quantum field theory & Lattice gauge\newline {\scriptsize\itshape\color{black!55} SU(2), adjoint Dirac flavor, lattice gauge theory, conformal window, anomalous dimension} & Particle Physics & Quantum Physics & 3.7k \\
+\texttt{12} & div. & Specific theories and interaction models; particle systematics & Particle physics & Particle Physics\newline {\scriptsize\itshape\color{black!55} left-right symmetry, LHC, SU(2)\_L x SU(2)\_R x U(1)\_B-L, seesaw mechanism, gauge} & Particle physics & Particle Physics & 14k \\
+\texttt{12.38} & sub. & Quantum chromodynamics & Quantum chromodynamics & Lattice QCD\newline {\scriptsize\itshape\color{black!55} nucleon strange quark content, lattice QCD, overlap fermion, exact chirality} & Lattice QCD & Particle Physics & 5.2k \\
+\texttt{12.60} & sub. & Specific theories and interaction models; particle systematics & Particle physics & Particle Physics\newline {\scriptsize\itshape\color{black!55} SO(10), gauge-mediated supersymmetry breaking, GUT, U(1)\_B-L} & Particle Physics & Physics & 3.2k \\
+\bottomrule
+\end{tabularx}
+\par\medskip\footnotesize Every method is given the \emph{same} field prompt (``name the field in 2--3 words''). Doc2LoRA-qwen decodes it \emph{text-free} from the full-rank node mean. For the other methods the same prompt is applied by glm-5.1 to each method's raw output: KeyLLM's keyword list (shown below each label), ICAE's compression reconstruction, and vec2text's GTR-inversion reconstruction. $n$ = number of papers.
+\end{document}
