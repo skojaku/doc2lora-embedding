@@ -54,8 +54,6 @@ BT_INCONTEXT = j(BT_DIR, "incontext_labels.json")    # in-context text baseline 
 # Cluster-label evaluation (issue #24): aligned node table + two metrics.
 BT_EVAL_NODES = j(BT_DIR, "label_eval_nodes.json")
 BT_EVAL_M1 = j(BT_DIR, "label_eval_metric1.json")    # lexical overlap (no LLM)
-BT_EVAL_M2 = j(BT_DIR, "label_eval_metric2.json")    # hierarchical consistency (6-judge roster)
-BT_EVAL_M3 = j(BT_DIR, "label_eval_metric3.json")    # nearest-category (DIAGNOSTIC; not reported)
 BT_EVAL_M4 = j(BT_DIR, "label_eval_metric4.json")    # pairwise vs the official label (judge panel)
 BT_EVAL_SUMMARY = j(BT_DIR, "label_eval_summary.json")   # reported report (M1 + length) (+ .md)
 
@@ -160,21 +158,6 @@ rule bt_icae_raw:
         "python {input.script}"
 
 
-# OFF the reported path since the naming step was removed: every method is now
-# scored on what it natively produces (label_eval_prep.py), so no artifact is
-# wrapped in the field-name instruction and handed to a naming LLM. Kept because
-# the named 2-3 word KeyLLM variant is still a useful contrast when reading the
-# raw keyword lists. Needs OPENROUTER_API_KEY in env.
-rule bt_keyllm_named:
-    input:
-        keywords = j(BT_DIR, "keyllm_faithful_labels.json"),
-        script = j(SCRIPTS, "keyllm_label_from_keywords.py"),
-    output:
-        labels = j(BT_DIR, "keyllm_label_from_keywords.json"),
-    shell:
-        "python {input.script}"
-
-
 # Stronger in-context TEXT baseline (issue #29): the SAME Qwen3-4B doc2lora model
 # that decodes the genes is instead given the 20 centroid-nearest member documents
 # (from nodes.json, same budget as KeyLLM) and answers the verbatim 2-3 word field
@@ -226,26 +209,6 @@ rule bt_label_eval_metric1:
 # Metric 2 -- hierarchical consistency, judged by the six-model roster (validation
 # gate on the true labels first). Cached under label_eval_cache/; needs
 # OPENROUTER_API_KEY in env.
-rule bt_label_eval_metric2:
-    input:
-        nodes_eval = BT_EVAL_NODES,
-        judges = j(SCRIPTS, "label_eval_judges.py"),
-        script = j(SCRIPTS, "label_eval_metric2.py"),
-    output:
-        metric2 = BT_EVAL_M2,
-    shell:
-        "python {input.script}"
-
-
-# Metric 4 -- PAIRWISE against the official label: the panel is shown the true
-# PACS label and two methods' labels for the same node and picks the closer one,
-# with "tie" available. Both orders are asked and a win needs both to agree, so
-# position bias is removed by construction. Calibration arms: the true label is
-# entered as a competitor (must beat every method) and run against itself (must
-# tie). Cached under label_eval_cache/; needs OPENROUTER_API_KEY, and Google ADC
-# for the Vertex seat (JUDGES_V2 in label_eval_judges.py).
-# NOT on the paper_assets path: it spends OpenRouter and GCP budget. Run it via
-# the `label_eval` target.
 rule bt_label_eval_metric4:
     input:
         nodes_eval = BT_EVAL_NODES,
@@ -262,19 +225,6 @@ rule bt_label_eval_metric4:
 # three candidate category names, so it scores which name the string is lexically
 # nearer and the ordering it produces is the length ordering. Superseded by
 # metric 4. Kept runnable; not an input to `label_eval`.
-rule bt_label_eval_metric3:
-    input:
-        nodes_eval = BT_EVAL_NODES,
-        judges = j(SCRIPTS, "label_eval_judges.py"),
-        script = j(SCRIPTS, "label_eval_metric3.py"),
-    output:
-        metric3 = BT_EVAL_M3,
-    shell:
-        "python {input.script}"
-
-
-# The reported report: fuzzy overlap + mean label length, with a ground-truth
-# control row. M2 and M3 are computed by their own rules but are not reported.
 rule bt_label_eval_summary:
     input:
         metric1 = BT_EVAL_M1,

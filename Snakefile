@@ -62,8 +62,7 @@ include: "workflow/rules/groupc_psens.smk"      # Tab. prompt-sensitivity (App.)
 include: "workflow/rules/groupc_incoherent.smk" # Tab. incoherent-control (App.)
 # Chains whose numbers are TYPED into the manuscript rather than \input-ed, so they
 # sit behind their own targets and not in `paper_assets` (see REPRODUCE.md):
-include: "workflow/rules/bench.smk"             # benchmark subsets the two chains below read
-include: "workflow/rules/icae.smk"              # ICAE baseline embeddings
+include: "workflow/rules/bench.smk"             # the sliced benchmark subsets
 include: "workflow/rules/groupc_bench.smk"      # temporal-hardening claims (App. datasets, #72)
 include: "workflow/rules/t2l.smk"               # Text-to-LoRA hypernetwork-adapter baseline
 include: "workflow/rules/actpatch.smk"          # the base model's own hidden states as a decoder

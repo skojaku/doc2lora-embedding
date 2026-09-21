@@ -38,6 +38,31 @@ ZENODO_API = "https://zenodo.org/api/records/{record}"
 
 TIERS = ("results", "s2and")
 
+# The published bundles were packed when each chain kept its outputs next to its own
+# code, under a dated exps/ directory. This workflow separates the two: scripts live
+# in workflow/scripts and results under data/. The table below is how an archived
+# path is read onto the current layout, applied to every member as it is unpacked, so
+# an old bundle lands where the rules look. data/ARTIFACTS.tsv already lists the
+# destinations, which is what --verify checks.
+LEGACY_LAYOUT = (
+    ("exps/2026-06-09-s2and/", "data/s2and/"),
+    ("exps/2026-06-11-baseline-trees/", "data/labels/"),
+    ("exps/2026-06-10-uncertainty/", "data/uncertainty/"),
+    ("exps/2026-06-09-kron-adapter/", "data/kron/"),
+    ("exps/2026-06-10-general-adapter/", "data/general_adapter/"),
+    ("exps/2026-05-28-concept-analogy-aps/", "data/pacs/"),
+    ("paper/iclr2026/hierarchy_rows.tex", "results/figs/hierarchy_rows.tex"),
+    ("figs/", "results/figs/"),
+)
+
+
+def current_path(archived: str) -> str:
+    """Where an archived file belongs in this tree."""
+    for old, new in LEGACY_LAYOUT:
+        if archived.startswith(old):
+            return new + archived[len(old):] if old.endswith("/") else new
+    return archived
+
 
 def load_manifest() -> dict[str, list[tuple[str, int, str]]]:
     if not MANIFEST.exists():
@@ -104,11 +129,14 @@ def unpack(tar_path: Path) -> None:
         subprocess.run(["zstd", "-d", "-f", str(tar_path)], check=True)
         tar_path = tar_path.with_suffix("")
     with tarfile.open(tar_path) as tf:
+        members = []
         for member in tf.getmembers():
+            member.name = current_path(member.name)
             target = (ROOT / member.name).resolve()
             if not str(target).startswith(str(ROOT)):             # refuse path traversal
                 sys.exit(f"refusing to unpack outside the repository: {member.name}")
-        tf.extractall(ROOT)                                        # noqa: S202 (members checked above)
+            members.append(member)
+        tf.extractall(ROOT, members=members)                       # noqa: S202 (checked above)
 
 
 def main() -> int:

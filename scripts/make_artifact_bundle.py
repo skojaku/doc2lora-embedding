@@ -43,31 +43,32 @@ MANIFEST = ROOT / "data" / "ARTIFACTS.tsv"
 # development checkout when the artifacts were produced there.
 SRC = ROOT
 
-# Glob patterns per tier, relative to the repository root. Order matters only for
+# Glob patterns per tier, relative to the repository root. Paths are the CURRENT
+# layout (code in workflow/, results under data/); fetch_artifacts.LEGACY_LAYOUT
+# reads the older bundles onto it. Order matters only for
 # readability; a file is assigned to the first tier that claims it.
 TIERS: dict[str, list[str]] = {
     "results": [
         # bootstrap CIs behind the two similarity tables
-        "exps/2026-06-10-uncertainty/pools/*.parquet",
-        "exps/2026-06-10-uncertainty/uncertainty_summary.csv",
-        "exps/2026-06-10-uncertainty/bootstrap_replicates.parquet",
+        "data/uncertainty/pools/*.parquet",
+        "data/uncertainty/uncertainty_summary.csv",
+        "data/uncertainty/bootstrap_replicates.parquet",
         # per-task score tables
-        "exps/2026-06-09-kron-adapter/results_*.csv",
-        "exps/2026-06-09-s2and/results_*.csv",
-        "exps/2026-06-09-s2and/full_*.csv",
-        "exps/2026-06-09-s2and/proc/*/sig_table.parquet",
+        "data/kron/results_*.csv",
+        "data/s2and/results_*.csv",
+        "data/s2and/proc/*/sig_table.parquet",
         # invertible adapters (small: ~10^5-10^7 params)
-        "exps/2026-06-09-kron-adapter/adapter_*.pt",
-        "exps/2026-06-10-general-adapter/adapter_general_*.pt",
-        "exps/2026-06-10-general-adapter/leakage_overlap.json",
-        "exps/2026-06-10-general-adapter/triplets.parquet",
+        "data/kron/adapter_*.pt",
+        "data/general_adapter/adapter_general_*.pt",
+        "data/general_adapter/leakage_overlap.json",
+        "data/general_adapter/triplets.parquet",
         # cluster-labelling chain
-        "exps/2026-05-28-concept-analogy-aps/results/*.parquet",
-        "exps/2026-05-28-concept-analogy-aps/results/tree.json",
-        "exps/2026-06-11-baseline-trees/*.json",
-        "exps/2026-06-11-baseline-trees/*.csv",
-        "exps/2026-06-11-baseline-trees/*.tex",
-        "exps/2026-06-11-baseline-trees/qwen_fullrank_means.npz",
+        "data/pacs/results/*.parquet",
+        "data/pacs/results/tree.json",
+        "data/labels/*.json",
+        "data/labels/*.csv",
+        "data/labels/*.tex",
+        "data/labels/qwen_fullrank_means.npz",
         # appendix controls
         "data/groupc/psens/*.json",
         "data/groupc/psens/*.parquet",
@@ -78,18 +79,18 @@ TIERS: dict[str, list[str]] = {
         "data/collab_scores_aps_*.parquet",
         "data/aps/pooling_spearman.csv",
         # the manuscript tables themselves (so a reader can diff their rebuild)
-        "figs/similarity_benchmarks.tex",
-        "figs/encoder_matrix.tex",
-        "figs/prompt_sensitivity.tex",
-        "figs/incoherent_control.tex",
-        "paper/iclr2026/hierarchy_rows.tex",
+        "results/figs/similarity_benchmarks.tex",
+        "results/figs/encoder_matrix.tex",
+        "results/figs/prompt_sensitivity.tex",
+        "results/figs/incoherent_control.tex",
+        "results/figs/hierarchy_rows.tex",
     ],
     "s2and": [
-        "exps/2026-06-09-s2and/proc/*/genes_*.npz",
-        "exps/2026-06-09-s2and/proc/*/sbert.npz",
-        "exps/2026-06-09-s2and/proc/*/specter.npz",
-        "exps/2026-06-09-s2and/proc/*/instructor.npz",
-        "exps/2026-06-09-s2and/proc/*/paper_text.parquet",
+        "data/s2and/proc/*/genes_*.npz",
+        "data/s2and/proc/*/sbert.npz",
+        "data/s2and/proc/*/specter.npz",
+        "data/s2and/proc/*/instructor.npz",
+        "data/s2and/proc/*/paper_text.parquet",
     ],
     "aps": [
         "data/aps/embeddings/*_norm_lora_emb.npz",

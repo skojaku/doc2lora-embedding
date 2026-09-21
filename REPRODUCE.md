@@ -77,6 +77,61 @@ python workflow/scripts/fig2_mixing_table.py --out results/figs/mixing_decode.te
 
 Both are CPU-only and take seconds.
 
+## Unpacking the archived intermediates
+
+Path 1 of the README — every reported table rebuilt on a CPU — reads score pools,
+adapters, and benchmark vectors that a GPU produced once. They are published as a
+Zenodo record and fetched by one command:
+
+```bash
+python scripts/fetch_artifacts.py results          # ~192 MB, 219 files
+python scripts/fetch_artifacts.py results s2and    # + ~12.3 GB, 50 files
+python scripts/fetch_artifacts.py --verify         # re-check what is already on disk
+python scripts/fetch_artifacts.py --record <ID> results   # pin a record
+```
+
+The script resolves the record, downloads the tarball for each tier you name, unpacks
+it into the repository, and checks every file against `data/ARTIFACTS.tsv` by SHA-256.
+There is nothing to place by hand: `data/ARTIFACTS.tsv` lists the destination of every
+archived file, and that is where it lands.
+
+| Tier | Size | What it holds | What it unlocks |
+|---|---|---|---|
+| `results` | ~192 MB | per-unit score pools, the bootstrap replicates, the trained adapters, the PACS node set, the label decodes and judge verdicts, the published tables | `snakemake paper_assets` on a CPU |
+| `s2and` | ~12.3 GB | the disambiguation corpora's vectors, per encoder | `snakemake s2and uncertainty` — re-score from vectors |
+| `aps` | ~137 GB | the 644k-paper gene matrices | **not distributed**: `snakemake all_embeddings` |
+
+Where things land, by chain:
+
+```
+data/uncertainty/pools/      per-unit score pools; bootstrap reads these
+data/uncertainty/            uncertainty_summary.csv -> both similarity tables
+data/kron/  data/general_adapter/     trained transforms and per-task score tables
+data/s2and/proc/<dataset>/   disambiguation vectors (the s2and tier)
+data/labels/                 node labels, decodes, judge verdicts, fullrank means
+data/pacs/results/           the PACS node set every labelling table is built on
+data/groupc/                 the appendix controls
+results/figs/                the published tables, so a rebuild can be diffed
+```
+
+The `aps` tier is left out on purpose: it exceeds a Zenodo record and is a
+deterministic function of the corpus plus the published checkpoints.
+
+**Layout note.** The bundles were packed when each chain kept its outputs next to its
+own code, under a dated `exps/` directory. This workflow separates the two, so
+`fetch_artifacts.py` rewrites each member onto the current layout as it unpacks
+(`LEGACY_LAYOUT` in that file). An archived
+`exps/2026-06-10-uncertainty/pools/np_aps_qwen.parquet` therefore arrives as
+`data/uncertainty/pools/np_aps_qwen.parquet`, which is what the manifest lists and
+what the rules read. `scripts/make_artifact_bundle.py` writes the current layout
+directly, so a bundle rebuilt from a completed run needs no rewriting.
+
+Having unpacked a tier, confirm the workflow agrees that it is satisfied:
+
+```bash
+snakemake -n paper_assets --rerun-triggers mtime    # should collapse to the table rules
+```
+
 ## Numbers typed into the text
 
 The manuscript states these as prose or as a hand-built `tabular`. The rule
@@ -100,11 +155,9 @@ panel through OpenRouter, so they need `OPENROUTER_API_KEY` and cost money;
 verdicts are not bit-reproducible — the panel is a measurement instrument with its
 own variance, not a deterministic function.
 
-Two rules survive whose output the current manuscript does not state:
-`groupc_efficiency` (`snakemake efficiency`) measures throughput and index size,
-which an earlier draft tabulated, and `groupc_bench` (`snakemake
-temporal_hardening`) backs the decontamination claims of App. datasets. They are
-kept because the claims they answer can be asked again of this workflow.
+Every rule reaches a reported result. The reachability is checked, not assumed: each
+script in `workflow/scripts` is named by a rule or imported by one that is, and each
+rule is scheduled by one of the targets above.
 
 ### A note on `--rerun-triggers`
 
@@ -138,7 +191,7 @@ an adapter, which is what makes them the interesting comparison:
 
 | Baseline | Where | Note |
 |---|---|---|
-| `ICAE` | `icae.smk` | Mistral-7B, 128 memory slots of dim 4096. Third-party weights and source tree: set `icae_weights`, `icae_code_dir`, `icae_base_model` |
+| `ICAE` | `baseline_trees.smk:bt_icae_raw` (labels), `simplex_kwgrid.smk` (fusion edge), `abstraction_walk.smk:aw_icae` (magnitude sweep) | Mistral-7B, 128 memory slots of dim 4096. Third-party weights and source tree: set `icae_weights`, `icae_code_dir`, `icae_base_model`. It is a **decoding** comparison only — no reported retrieval row is ICAE, so no retrieval chain for it exists here |
 | `T2L` | `t2l.smk` | Text-to-LoRA: a hypernetwork that expands a frozen `gte-large` vector into a LoRA. Separate clone, like `doc-to-lora`: set `t2l_src` |
 | `ActPatch` | `actpatch.smk` | training-free activation patching of Qwen3-4B hidden states; needs no third-party weights |
 | `KeyLLM` / in-context | `baseline_trees.smk` | an LLM reading the documents, for the cluster-label comparison |
@@ -245,7 +298,7 @@ so in their own docstrings, so they cannot be mistaken for pipeline steps.
 
 ## What was left out, and why
 
-This repository carries 23 rule files. The chains that are absent produced results
+This repository carries 22 rule files. The chains that are absent produced results
 that never reached the manuscript: simplex fusion and the fusability sweeps,
 topological (TDA) hole-finding, the idea-gene GA, cross-domain analogy, arXiv field
 splits, interpolation demos, and the multi-agent holes study.

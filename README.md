@@ -67,7 +67,7 @@ snakemake sample_judge -j1 \
 
 | # | You want to | Command | Needs |
 |---|---|---|---|
-| 1 | Rebuild every reported **table** from archived scores | `python scripts/fetch_artifacts.py results` then `snakemake paper_assets -j4` | CPU, ~130 MB download |
+| 1 | Rebuild every reported **table** from archived scores | `python scripts/fetch_artifacts.py results` then `snakemake paper_assets -j4` | CPU, ~192 MB download |
 | 2 | Re-score the **name-disambiguation** rows from the vectors | `python scripts/fetch_artifacts.py results s2and` then `snakemake s2and uncertainty -j4` | CPU, +12 GB download |
 | 3 | Re-derive **everything from the corpora**, genes included | `snakemake paper_assets -j4` | 1–4 GPUs (≥48 GB total), ~200 GB disk, licensed APS corpus |
 
@@ -132,9 +132,19 @@ Secrets go in `.env` (gitignored): `HF_TOKEN` for the gated base models,
 | `vec2text` GTR corrector | [vec2text](https://github.com/jxmorris12/vec2text) | third-party weights, isolated venv |
 
 Archived **intermediates** (per-unit score pools, adapters, benchmark embeddings) are on
-Zenodo and fetched by `scripts/fetch_artifacts.py`; `data/ARTIFACTS.tsv` lists every file
-with its size and SHA-256. `scripts/make_artifact_bundle.py` rebuilds those bundles from
-a completed run and `scripts/zenodo_upload.py` deposits them.
+Zenodo:
+
+```bash
+python scripts/fetch_artifacts.py results        # ~192 MB -> every table rebuilds on a CPU
+python scripts/fetch_artifacts.py --verify       # re-check what is already on disk
+```
+
+The script downloads, unpacks into the repository, and verifies every file against
+`data/ARTIFACTS.tsv` by SHA-256. Nothing is placed by hand — the manifest lists each
+file's destination, and that is where it lands. REPRODUCE.md has the tier table, the
+per-chain destinations, and the note on reading older bundles onto the current layout.
+`scripts/make_artifact_bundle.py` rebuilds the bundles from a completed run and
+`scripts/zenodo_upload.py` deposits them.
 
 The 644k-paper APS gene matrices (~137 GB across three encoders) are **not** distributed:
 they exceed a Zenodo record and are a deterministic function of the corpus plus the
@@ -143,7 +153,7 @@ published checkpoints. Rebuild them with `snakemake all_embeddings`.
 ## Layout
 
 ```
-Snakefile                 23 rule files, one target per reported asset
+Snakefile                 22 rule files, one target per reported asset
 workflow/rules/*.smk      one file per chain; its header says which result it makes
 workflow/scripts/         every script the rules call, in one directory
     bench_data.py           where the data lives, and where each chain writes
