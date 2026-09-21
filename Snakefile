@@ -78,6 +78,10 @@ include: "workflow/rules/recipe_fusion.smk"     # the recipe blend quoted in App
 include: "workflow/rules/simplex_kwgrid.smk"    # Fig. cluster-labels panels (e), (f) + Fig. psens-edge
 include: "workflow/rules/fig2_pacs_clustering.smk"  # Fig. cluster-labels + Tab. mixing-decode
 
+# A small synthetic corpus the rules above can be tested on, without the licensed
+# corpora, the checkpoints, or a GPU. `snakemake sample_check` is the whole test.
+include: "workflow/rules/sample.smk"
+
 # ── Manuscript targets ───────────────────────────────────────────────────
 #
 # `paper_assets` builds exactly what paper/iclr2026 \input's or \includegraphics's

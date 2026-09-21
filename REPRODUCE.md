@@ -1,51 +1,56 @@
 # Result → code map
 
-Every figure, table, and quoted number in `paper/iclr2026/main.tex` (main text
-**and** appendices), with the rule that produces it.
+Every figure, table, and quoted number the paper reports, with the rule that produces
+it. The manuscript is not in this repository; the paths below are what the rules write
+under `figs_dir` (`results/figs` by default), named as the paper reads them.
 
 Status legend:
 
-- ✅ **wired** — a rule produces it, and `snakemake paper_assets` builds it.
-- 🔶 **typed** — a rule produces the numbers, but the `.tex` in the manuscript is
-  hand-assembled from them. Behind its own target, not `paper_assets`.
-- ✋ **manual** — hand-drawn or hand-written by design; no rule should exist.
-- ❌ **gap** — the manuscript needs it and no rule in this repository makes it.
+- ✅ **wired** — `snakemake paper_assets` builds it.
+- 🔶 **typed** — a rule produces the numbers, and the paper states them as prose or as
+  a hand-built table. Behind its own target, not `paper_assets`.
+- ✋ **manual** — hand-drawn by design; no rule should exist.
 
-## Assets the manuscript reads
-
-These are the complete set of `\includegraphics` / `\input` targets in
-`main.tex` and `sections/*.tex`.
+## Assets the paper reads
 
 | Asset | Producer | Status |
 |---|---|---|
-| `figs/similarity_benchmarks.tex` (Tab. similarity, Sec. results) | `uncertainty.smk:tab_similarity_benchmarks` → `workflow/plot/tab_similarity_benchmarks.py` | ✅ |
-| `figs/encoder_matrix.tex` (Tab. per-encoder, App. tables) | same rule (third output) | ✅ |
-| `figs/pacs-clustering.pdf` (Fig. cluster-labels, Sec. results) | `fig2_pacs_clustering.smk:fig2_pacs_clustering` → `workflow/plot/fig_pacs_clustering.py` | ✅ |
-| `figs/mixing_decode.tex` (Tab. mixing-decode, Sec. results) | `fig2_pacs_clustering.smk:fig2_mixing_table` → `workflow/scripts/fig2_mixing_table.py` | ✅ |
-| `paper/iclr2026/hierarchy_rows.tex` (Tab. hierarchy-labels, App. tables) | `baseline_trees.smk:bt_hierarchy_rows` → `exps/2026-06-11-baseline-trees/make_hierarchy_rows.py` | ✅ |
-| `figs/prompt_sensitivity.tex` (Tab. prompt-sensitivity, App.) | `groupc_psens.smk:psens_score` | ✅ |
-| `figs/psens_edge_curves.pdf` (Fig. psens-edge, App.) | `simplex_kwgrid.smk:kg_psens_score` → `exps/2026-07-02-simplex-kwgrid/psens_edge_score.py` | ✅ |
-| `figs/incoherent_control.tex` (Tab. incoherent-control, App. cluster labels) | `groupc_incoherent.smk:incoh_score` | ✅ |
-| `figs/doc2lora-figs.pdf` (Fig. method, Sec. intro) | hand-drawn, source `figs/doc2lora-figs.graffle` | ✋ |
-| `paper/iclr2026/math_commands.tex` | local LaTeX macros | ✋ |
+| `similarity_benchmarks.tex` (Tab. similarity, Sec. results) | `uncertainty.smk:tab_similarity_benchmarks` → `workflow/plot/tab_similarity_benchmarks.py` | ✅ |
+| `encoder_matrix.tex` (Tab. per-encoder, App. tables) | same rule (third output) | ✅ |
+| `pacs-clustering.pdf` (Fig. cluster-labels, Sec. results) | `fig2_pacs_clustering.smk:fig2_pacs_clustering` → `workflow/plot/fig_pacs_clustering.py` | ✅ |
+| `mixing_decode.tex` (Tab. mixing-decode, Sec. results) | `fig2_pacs_clustering.smk:fig2_mixing_table` → `workflow/scripts/fig2_mixing_table.py` | ✅ |
+| `hierarchy_rows.tex` (Tab. hierarchy-labels, App. tables) | `baseline_trees.smk:bt_hierarchy_rows` → `workflow/scripts/make_hierarchy_rows.py` | ✅ |
+| `prompt_sensitivity.tex` (Tab. prompt-sensitivity, App.) | `groupc_psens.smk:psens_score` | ✅ |
+| `psens_edge_curves.pdf` (Fig. psens-edge, App.) | `simplex_kwgrid.smk:kg_psens_score` → `workflow/scripts/psens_edge_score.py` | ✅ |
+| `incoherent_control.tex` (Tab. incoherent-control, App. cluster labels) | `groupc_incoherent.smk:incoh_score` | ✅ |
+| Fig. method (Sec. intro) | hand-drawn | ✋ |
 
-Three rules write a fourth artifact the manuscript does not `\input`:
-`figs/similarity_benchmarks.pdf` (the same benchmark scores as a dot plot),
-`figs/similarity_task_transform.tex` (Tab. similarity with the task-specific
-transform column), and `figs/prompt_sensitivity_edge.tex` (the edge-prompt numbers
-the appendix states in prose). They are kept because they are rule outputs, and
-because a rebuild can be diffed against them.
+Three rules write a fourth artifact the paper does not `\input`:
+`similarity_benchmarks.pdf` (the same scores as a dot plot),
+`similarity_task_transform.tex` (Tab. similarity with the task-specific transform
+column), and `prompt_sensitivity_edge.tex` (the edge-prompt numbers the appendix
+states in prose). They stay because they are rule outputs and a rebuild can be diffed
+against them.
 
-`paper_assets` depends on exactly the ✅ rows plus `data/aps/pooling_spearman.csv`
-(the Spearman ρ quoted in Sec. methods). Adding anything else to that target is a
-claim the manuscript reads it. Every asset the manuscript reads has a rule;
-nothing in the PDF is unreachable from this workflow.
+`paper_assets` depends on exactly the ✅ rows plus `data/aps/pooling_spearman.csv` (the
+Spearman ρ quoted in Sec. methods). Adding anything else to that target is a claim the
+paper reads it.
+
+## Testing the workflow without the corpora
+
+`snakemake sample_check_judged -j4` builds a small synthetic field and runs the real
+scoring scripts over it, judge panel included, in about twenty seconds on a CPU. The
+method ordering is planted by `workflow/scripts/make_sample.py` and recovered by
+`workflow/scripts/check_sample.py`, so a pipeline that drops a method or unpairs the
+score columns fails the check. See `workflow/rules/sample.smk`, and the README for what
+it does and does not cover.
 
 ### Figure: cluster labels and mixtures, panel by panel
 
-The figure is six panels drawn from six caches, and each cache is the cheap
-summary of an expensive run. All six caches are tracked in git, so the figure
-itself is a CPU job of a few seconds.
+The figure is six panels drawn from six small JSON/CSV summaries, each the cheap
+end of an expensive run. Drawing the figure from them is seconds of CPU; producing
+them is the GPU work named in the last column. They live under `data/`, so a clone
+either rebuilds them through those rules or unpacks them from the artifact bundle.
 
 | Panel | Shows | Cache | Produced by |
 |---|---|---|---|
@@ -54,20 +59,20 @@ itself is a CPU job of a few seconds.
 | (c) | PACS breadth against tree depth | `length_vs_breadth.csv`, `qwen_fullrank_field23.json` | `baseline_trees.smk:bt_length_dial`, `bt_decode_fullrank` |
 | (d) | Wikipedia abstraction walk | `abstraction_walk.json` | `abstraction_walk.smk:aw_doc2lora` |
 | (e) | actual against ideal mixing weight | `pair_axis_metrics_pairaxis.json` | `simplex_kwgrid.smk:kg_metrics` |
-| (f) | verbatim copy rate along the edge | `pair_axis_copyrate_pairaxis_L1.json`, `pair_axis_t2l_e1_pairaxis.json` | `simplex_kwgrid.smk:skg_copyrate`, `fig2_pacs_clustering.smk:fig2_t2l_edge_metrics` |
+| (f) | verbatim copy rate along the edge | `pair_axis_copyrate_pairaxis_L1.json`, `pair_axis_t2l_e1_pairaxis.json` | `simplex_kwgrid.smk:kg_copyrate`, `fig2_pacs_clustering.smk:fig2_t2l_edge_metrics` |
 
 The panel (b) judge cache is a **param**, not an input, so asking for the figure
 never spends OpenRouter budget; after a fresh judge run, re-plot with
 `snakemake figure2 --forcerun fig2_pacs_clustering`.
 
 Snakemake links rules by path, so asking for the figure through the workflow
-schedules the producer of every cache it declares — on a clean clone that is the
-GPU chain behind them. To redraw the figure from the tracked caches alone, call
+schedules the producer of every summary it declares — on a clean tree that is the
+whole GPU chain. Once the summaries exist, redraw without the workflow by calling
 the two scripts directly:
 
 ```bash
-python workflow/plot/fig_pacs_clustering.py --out figs/pacs-clustering.pdf
-python workflow/scripts/fig2_mixing_table.py --out figs/mixing_decode.tex
+python workflow/plot/fig_pacs_clustering.py --out results/figs/pacs-clustering.pdf
+python workflow/scripts/fig2_mixing_table.py --out results/figs/mixing_decode.tex
 ```
 
 Both are CPU-only and take seconds.
@@ -80,11 +85,11 @@ produces the numbers; the transcription is manual.
 | Number / table | Producer | Target | Status |
 |---|---|---|---|
 | Tab. label-eval (App. cluster labels): fuzzy overlap, word counts, pairwise wins | `baseline_trees.smk:bt_label_eval_*` → `label_eval_summary.md`, `label_eval_metric4.json` | `snakemake label_eval` | 🔶 |
-| App. recipe-fusion: the two source recipes, the decoded midpoint, and the cheese answer, all quoted verbatim | `recipe_fusion.smk` → `exps/2026-06-11-recipe-fusion/results/recipe_fusion.json`, `figs/recipe_fusion.tex` | `snakemake recipe_fusion` | 🔶 |
+| App. recipe-fusion: the two source recipes, the decoded midpoint, and the cheese answer, all quoted verbatim | `recipe_fusion.smk` → `data/recipe_fusion/recipe_fusion.json`, `<figs_dir>/recipe_fusion.tex` | `snakemake recipe_fusion` | 🔶 |
 | App. actpatch: identification rate and MRR, midpoint gains, the $28$-node comparison | `actpatch.smk` → `score_compare.json`, `midpoint_score.json`, `arith_m3/m4.json` | `snakemake actpatch` (add `actpatch_judged` for the LLM panel) | 🔶 |
 | T2L: the three embedding positions, the label arm, the fusion arm and its two validity gates | `t2l.smk` → `t2l_{gte,hidden,dw}_labels.json`, `t2l_fusion_score.json` | `snakemake t2l` | 🔶 |
 | Sec. fusion / App. prompt-sensitivity: the slopes ($1.11$–$1.20$, $1.19$–$1.24$, $0.29$–$0.41$) and copy rates | `simplex_kwgrid.smk:kg_psens_score` → `psens_edge.json` | in `paper_assets` | 🔶 |
-| Temporal hardening: "next-paper AUC varies by at most .005", the 2016 topic split (App. datasets, #72) | `groupc_bench.smk:gcb_bootstrap` → `figs/groupc_temporal.tex` | `snakemake temporal_hardening` | 🔶 |
+| Temporal hardening: "next-paper AUC varies by at most .005", the 2016 topic split (App. datasets, #72) | `groupc_bench.smk:gcb_bootstrap` → `<figs_dir>/groupc_temporal.tex` | `snakemake temporal_hardening` | 🔶 |
 | Train/eval overlap: "<1% of evaluation papers", "at most 1.24% of edges" (App. datasets, #22) | `general_adapter.smk:ga_leakage_overlap` | `snakemake leakage` | 🔶 |
 | Pooling ρ (mean-over-rank vs full tensor, Sec. methods) | `pooling_validation` → `data/aps/pooling_spearman.csv` | in `paper_assets` | 🔶 |
 | Tab. "Decoding clusters and mixtures" (Sec. results) — verbatim decodes | `baseline_trees.smk:bt_decode_fullrank` → `qwen_fullrank_field23.json` | `snakemake paper_assets` | 🔶 |
@@ -133,9 +138,9 @@ an adapter, which is what makes them the interesting comparison:
 
 | Baseline | Where | Note |
 |---|---|---|
-| `ICAE` | `icae.smk`, `exps/2026-06-21-icae-benchmark/` | Mistral-7B, 128 memory slots of dim 4096. Third-party weights and source tree: set `icae_weights`, `icae_code_dir`, `icae_base_model` |
-| `T2L` | `t2l.smk`, `exps/2026-09-18-t2l-baseline/` | Text-to-LoRA: a hypernetwork that expands a frozen `gte-large` vector into a LoRA. Separate clone, like `doc-to-lora`: set `t2l_src` |
-| `ActPatch` | `exps/2026-09-18-gene-vs-activation/` | training-free activation patching of Qwen3-4B hidden states. Numbers are typed into App. actpatch; run the scripts directly |
+| `ICAE` | `icae.smk` | Mistral-7B, 128 memory slots of dim 4096. Third-party weights and source tree: set `icae_weights`, `icae_code_dir`, `icae_base_model` |
+| `T2L` | `t2l.smk` | Text-to-LoRA: a hypernetwork that expands a frozen `gte-large` vector into a LoRA. Separate clone, like `doc-to-lora`: set `t2l_src` |
+| `ActPatch` | `actpatch.smk` | training-free activation patching of Qwen3-4B hidden states; needs no third-party weights |
 | `KeyLLM` / in-context | `baseline_trees.smk` | an LLM reading the documents, for the cluster-label comparison |
 
 **T2L runs three arms, not one.** Three points in its pipeline can each be called
@@ -193,9 +198,8 @@ Two further changes make previously unreachable steps reproducible:
    Docker-specific sub-Snakefile, so they looked like frozen artifacts.
    `workflow/rules/pacs_groups.smk` wires them, rendering the sub-config from
    `workflow/config.yaml` so paths have one source of truth.
-8. **Hardcoded absolute paths removed.** Several `exps/` scripts carried
-   `/home/skojaku/projects/doc2lora-embedding/...` on `sys.path`; they now resolve
-   the repository root from `__file__`.
+8. **Hardcoded absolute paths removed.** Several scripts carried an author's home
+   directory on `sys.path`; they now resolve the repository root from `__file__`.
 
 Two more classes of defect came out of reading the scripts rather than the DAG:
 
@@ -224,15 +228,16 @@ Two more classes of defect came out of reading the scripts rather than the DAG:
 11. **The pair-axis ICAE decoder has its own module.** `decode_absfollow_icae.py`
     reached across into an exploratory experiment directory for the ICAE loader it
     needs, and that directory is not part of the manuscript's closure. The loader is
-    `exps/2026-07-02-simplex-kwgrid/icae_slots.py` here: a thin wrapper over
+    `workflow/scripts/icae_slots.py` here: a thin wrapper over
     `icae_lib.load_icae` that resolves the third-party weights, source tree, and base
     model through `workflow/config.yaml`, so the ICAE arm of the edge decode has one
     dependency instead of a chain of sideways imports.
-12. **Every cache a figure reads is tracked.** Fig. cluster-labels draws from six
-    JSON/CSV summaries of GPU decodes and judge panels. They are small, they are the
-    published numbers, and they are committed with `.gitignore` exceptions, so the
-    figure redraws on a laptop from a fresh clone. The expensive runs behind them
-    stay reproducible through their own rules.
+12. **Code and results are separate directories.** A dated experiment folder used to
+    hold both, so a script wrote its outputs next to itself and a rule could point at
+    a path that an archived experiment had taken with it. Scripts now live in
+    `workflow/scripts` and every chain writes under `data/`, resolved by
+    `bench_data.out_dir` and redirectable per chain with `$<TOPIC>_OUT` -- which is
+    what lets the sample corpus run the real scripts without touching a real result.
 
 Scripts that no rule reaches (`eval_next_paper.py`, `eval_yearmean.py`,
 `year_balanced_collab.py`, `specter2_embed.py`) are kept for provenance and now say
@@ -251,20 +256,22 @@ From nothing but the corpora and checkpoints (`snakemake -n <target>`):
 
 | Target | Jobs | Heaviest step |
 |---|---|---|
-| `paper` / `paper_assets` | 195 | 3 × 644k-paper gene extraction (GPU-days) |
+| `paper_assets` | 200 | 3 × 644k-paper gene extraction (GPU-days) |
 | `uncertainty` | 133 | 1000× bootstrap over every paired score pool |
 | `general` | 115 | the general adapter + applying it everywhere |
-| `s2and` | 78 | gene extraction for five disambiguation corpora |
-| `kron` | 55 | per-field citation adapters |
+| `s2and` | 62 | gene extraction for five disambiguation corpora |
 | `temporal_hardening` | 52 | retraining the transform on pre-2018 citations |
-| `figure2` | 34 | the pair-axis edge decodes behind panels (e), (f) |
-| `fields` | 19 | economics + psychology corpora and genes |
+| `kron` | 43 | per-field citation adapters |
+| `figure2` | 39 | the pair-axis edge decodes behind panels (e), (f) |
 | `label_eval` | 18 | LLM judge panel (OpenRouter, costs money) |
+| `actpatch_judged` | 13 | 500 decodes per arm, then the judge panel |
 | `pair_axis` | 13 | 250 pairs × 13 points × 2 decoders |
-| `efficiency` | 11 | throughput + ANN index measurements on GPU |
+| `fields` | 11 | economics + psychology corpora and genes |
 | `t2l` | 9 | the hypernetwork baseline's label and fusion arms |
+| `sample_check_judged` | 7 | nothing: 20 seconds on a CPU |
 | `baselines_aps` | 5 | SPECTER2 + INSTRUCTOR + GTE over 644k APS abstracts |
 | `pacs_groups` | 5 | the PACS node set |
+| `recipe_fusion` | 3 | one Mistral-7B decode of two recipes |
 
 Every one of these was checked with `snakemake -n` against an **empty** `data/`
 directory, so the counts are true cold-start figures: the only inputs assumed to
@@ -274,6 +281,6 @@ exist are the licensed corpora and the checkpoints named in
 With the `results` artifact bundle unpacked, the table-building tail of
 `paper_assets` runs on a CPU in minutes.
 
-Fig. cluster-labels is cheaper than the `figure2` job count suggests: it redraws in
-seconds from the caches tracked in git — see the panel-by-panel table above for the
-two commands that bypass the workflow's GPU producers.
+Note that Snakemake's default trigger set includes `params`, `input` and `code`, so a
+clone with no `.snakemake` provenance can schedule more than is strictly out of date.
+`snakemake -n <target> --rerun-triggers mtime` asks the narrower question.

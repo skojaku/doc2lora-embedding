@@ -12,7 +12,9 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score, f1_score
 
-POOLS = "data/uncertainty/pools"
+from bench_data import out_dir   # bench_data.py sits next to this file
+UNC = out_dir("uncertainty")     # $UNCERTAINTY_OUT redirects a test run off the real tree
+POOLS = str(UNC / "pools")
 N_BOOT = int(sys.argv[1]) if len(sys.argv) > 1 else 1000
 rng = np.random.default_rng(0)
 reps = []
@@ -77,10 +79,10 @@ for f in sorted(glob.glob(f"{POOLS}/s2and_*.parquet")):
         add("name_disambig", ds, enc, m, "B3_F1", vals)
 
 R = pd.DataFrame(reps, columns=["benchmark", "group", "enc", "method", "metric", "boot", "value"])
-R.to_parquet(f"data/uncertainty/bootstrap_replicates.parquet")
+R.to_parquet(UNC / "bootstrap_replicates.parquet")
 summ = (R.groupby(["benchmark", "group", "enc", "method", "metric"])["value"]
         .agg(mean="mean", std="std", ci2_5=lambda x: x.quantile(.025), ci97_5=lambda x: x.quantile(.975))
         .reset_index())
-summ.to_csv("data/uncertainty/uncertainty_summary.csv", index=False)
+summ.to_csv(UNC / "uncertainty_summary.csv", index=False)
 print(f"[saved] {len(R):,} replicate rows; {len(summ)} (benchmark×group×enc×method×metric) summary rows")
 print(summ.head(20).to_string(index=False))

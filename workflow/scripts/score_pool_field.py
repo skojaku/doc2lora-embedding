@@ -21,8 +21,11 @@ from bench_data import load, aps_paper_table
 from eval_collab2 import author_cos
 
 FIELD = sys.argv[1]; ENC = sys.argv[2]
-OUT = "data/uncertainty/pools"; os.makedirs(OUT, exist_ok=True)
+from bench_data import out_dir   # bench_data.py sits next to this file
+OUT = str(out_dir("uncertainty") / "pools"); os.makedirs(OUT, exist_ok=True)
 WINMAP = {"aps": [2000, 2004, 2008], "economics": [2008, 2012, 2016], "psychology": [2008, 2012, 2016]}
+# A corpus outside that table (the sample, or a new field) carries its own windows.
+_W = os.environ.get("SCORE_WINDOWS")
 DY, N_AUTH, N_NEG, SEEDS = 3, 4000, 10, [0, 1]
 GENE = [(ENC, f"{ENC}_norm_lora_emb.npz"), (f"{ENC}_kron", f"{ENC}_kron_emb.npz"),
         (f"{ENC}_genkron", f"{ENC}_genkron_emb.npz")]
@@ -69,7 +72,7 @@ for name, fn in GENE + TEXT:
 methods = list(EMB)
 print(f"[{FIELD}/{ENC}] methods: {methods}", flush=True)
 
-windows = WINMAP[FIELD]
+windows = [int(w) for w in _W.split(",")] if _W else WINMAP[FIELD]
 
 # ---------------- collab: per candidate pair ----------------
 d = pd.read_parquet(f"data/collab_scores_{FIELD}_hard.parquet").reset_index(drop=True)

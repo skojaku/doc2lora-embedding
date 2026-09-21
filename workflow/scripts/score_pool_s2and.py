@@ -19,7 +19,8 @@ from s2lib import b3, b3_per_sig
 
 DS = sys.argv[1]; ENC = sys.argv[2]
 base = "data/s2and"; dev = "cuda" if torch.cuda.is_available() else "cpu"
-OUT = "data/uncertainty/pools"; os.makedirs(OUT, exist_ok=True)
+from bench_data import out_dir   # bench_data.py sits next to this file
+OUT = str(out_dir("uncertainty") / "pools"); os.makedirs(OUT, exist_ok=True)
 st = pd.read_parquet(f"{base}/proc/{DS}/sig_table.parquet"); st["paper_id"] = st.paper_id.astype(str)
 
 

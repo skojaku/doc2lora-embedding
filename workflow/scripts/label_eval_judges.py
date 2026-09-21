@@ -78,7 +78,8 @@ def _call_vertex(model, system, user):
     )
     return r.text or ""
 
-CACHE = Path(__file__).resolve().parent / "label_eval_cache"
+from bench_data import out_dir            # bench_data.py sits next to this file
+CACHE = out_dir("labels") / "judge_cache"   # responses are cached so a rerun is free
 
 
 def _key(model, system, user):
@@ -96,9 +97,31 @@ def _parse(txt):
     raise ValueError(f"no JSON object in: {txt[:200]!r}")
 
 
+def _local_fuzzy(system, user):
+    """An offline stand-in for a judge, for smoke-testing the panel's plumbing.
+
+    It answers exactly one prompt -- the pairwise label comparison -- by string
+    similarity to the official name, and refuses anything else rather than
+    inventing a verdict. It is NOT a judge: it cannot read meaning, and it is
+    order-symmetric, so it agrees with itself across both presentations by
+    construction and says nothing about position bias. Use it to prove the chain
+    runs end to end without spending on inference; use the real panel for a number.
+    """
+    quoted = re.findall(r'"([^"]*)"', user)
+    if "closer in meaning" not in user or len(quoted) < 3:
+        raise ValueError("local/fuzzy only answers the pairwise-label prompt")
+    from rapidfuzz import fuzz
+    gt, a, b = quoted[0], quoted[1], quoted[2]
+    sa, sb = fuzz.token_set_ratio(a, gt), fuzz.token_set_ratio(b, gt)
+    choice = "tie" if abs(sa - sb) < 2 else ("A" if sa > sb else "B")
+    return {"choice": choice, "reason": f"token-set {sa:.0f} vs {sb:.0f}"}
+
+
 def judge_json(model_slug, system, user, retries=4, use_cache=True):
     """Call one judge; return parsed JSON dict, or {'_error': ...} on failure."""
-    CACHE.mkdir(exist_ok=True)
+    if model_slug.startswith("local/"):
+        return _local_fuzzy(system, user)
+    CACHE.mkdir(parents=True, exist_ok=True)
     ck = _key(model_slug, system, user)
     if use_cache and ck.exists():
         return json.loads(ck.read_text())

@@ -135,7 +135,11 @@ def collapse_orders(results):
 def main():
     nodes = json.loads((DATA / "label_eval_nodes.json").read_text())
     judges = dict(JUDGES_V2)
-    if os.environ.get("JUDGES_SUBSET"):
+    if os.environ.get("JUDGE_PANEL"):
+        # "name=slug,name=slug" replaces the panel outright (smoke tests, reruns of a
+        # retired roster). The reported numbers come from JUDGES_V2 with this unset.
+        judges = dict(kv.split("=", 1) for kv in os.environ["JUDGE_PANEL"].split(","))
+    elif os.environ.get("JUDGES_SUBSET"):
         keep = set(os.environ["JUDGES_SUBSET"].split(","))
         judges = {k: v for k, v in judges.items() if k in keep}
     control_only = bool(os.environ.get("CONTROL_ONLY"))
