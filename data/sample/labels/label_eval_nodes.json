@@ -1,0 +1,452 @@
+[
+  {
+    "code": "0",
+    "kind": "field",
+    "gt_label": "Quantum information",
+    "decoded": {
+      "doc2lora": "Quantum information",
+      "icae": "Quantum physics",
+      "incontext": "Quantum",
+      "keyllm": "quantum, information, lattice, measurement",
+      "vec2text": "in-distance rttstinrs scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "0.1",
+    "kind": "subdivision",
+    "gt_label": "Quantum information, topic 1",
+    "decoded": {
+      "doc2lora": "Quantum information, topic 1",
+      "icae": "Quantum physics",
+      "incontext": "Quantum information, topic",
+      "keyllm": "quantum, information,, topic, lattice, measurement",
+      "vec2text": "in-distance rrsirrlsn scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "0.2",
+    "kind": "subdivision",
+    "gt_label": "Quantum information, topic 2",
+    "decoded": {
+      "doc2lora": "Quantum information, topic 2",
+      "icae": "Quantum physics",
+      "incontext": "Quantum information, topic",
+      "keyllm": "quantum, information,, topic, lattice, measurement",
+      "vec2text": "in-distance eirsnelsr scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "1",
+    "kind": "field",
+    "gt_label": "Condensed matter physics",
+    "decoded": {
+      "doc2lora": "Condensed matter physics",
+      "icae": "Condensed physics",
+      "incontext": "Condensed matter",
+      "keyllm": "condensed, matter, physics, lattice, measurement",
+      "vec2text": "in-distance ialelsans scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "1.1",
+    "kind": "subdivision",
+    "gt_label": "Condensed matter physics, topic 1",
+    "decoded": {
+      "doc2lora": "Condensed matter physics, topic 1",
+      "icae": "Condensed physics",
+      "incontext": "Condensed matter physics, topic",
+      "keyllm": "condensed, matter, physics,, topic, lattice, measurement",
+      "vec2text": "in-distance atriatssl scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "1.2",
+    "kind": "subdivision",
+    "gt_label": "Condensed matter physics, topic 2",
+    "decoded": {
+      "doc2lora": "Condensed matter physics, topic 2",
+      "icae": "Condensed physics",
+      "incontext": "Condensed matter physics, topic",
+      "keyllm": "condensed, matter, physics,, topic, lattice, measurement",
+      "vec2text": "in-distance srantteas scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "2",
+    "kind": "field",
+    "gt_label": "Astrophysics and cosmology",
+    "decoded": {
+      "doc2lora": "Astrophysics and cosmology",
+      "icae": "Astrophysics physics",
+      "incontext": "Astrophysics and",
+      "keyllm": "astrophysics, cosmology, lattice, measurement",
+      "vec2text": "in-distance laenasslt scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "2.1",
+    "kind": "subdivision",
+    "gt_label": "Astrophysics and cosmology, topic 1",
+    "decoded": {
+      "doc2lora": "Astrophysics and cosmology, topic 1",
+      "icae": "Astrophysics physics",
+      "incontext": "Astrophysics and cosmology, topic",
+      "keyllm": "astrophysics, cosmology,, topic, lattice, measurement",
+      "vec2text": "in-distance sneetntls scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "2.2",
+    "kind": "subdivision",
+    "gt_label": "Astrophysics and cosmology, topic 2",
+    "decoded": {
+      "doc2lora": "Astrophysics and cosmology, topic 2",
+      "icae": "Astrophysics physics",
+      "incontext": "Astrophysics and cosmology, topic",
+      "keyllm": "astrophysics, cosmology,, topic, lattice, measurement",
+      "vec2text": "in-distance rsaniiera scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "3",
+    "kind": "field",
+    "gt_label": "Fluid dynamics",
+    "decoded": {
+      "doc2lora": "Fluid dynamics",
+      "icae": "Fluid physics",
+      "incontext": "Fluid",
+      "keyllm": "fluid, dynamics, lattice, measurement",
+      "vec2text": "in-distance ilnnnitii scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "3.1",
+    "kind": "subdivision",
+    "gt_label": "Fluid dynamics, topic 1",
+    "decoded": {
+      "doc2lora": "Fluid dynamics, topic 1",
+      "icae": "Fluid physics",
+      "incontext": "Fluid dynamics, topic",
+      "keyllm": "fluid, dynamics,, topic, lattice, measurement",
+      "vec2text": "in-distance traeralts scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "3.2",
+    "kind": "subdivision",
+    "gt_label": "Fluid dynamics, topic 2",
+    "decoded": {
+      "doc2lora": "Fluid dynamics, topic 2",
+      "icae": "Fluid physics",
+      "incontext": "Fluid dynamics, topic",
+      "keyllm": "fluid, dynamics,, topic, lattice, measurement",
+      "vec2text": "in-distance atlsnnnse scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "4",
+    "kind": "field",
+    "gt_label": "Particle physics",
+    "decoded": {
+      "doc2lora": "Particle physics",
+      "icae": "Particle physics",
+      "incontext": "Particle",
+      "keyllm": "particle, physics, lattice, measurement",
+      "vec2text": "in-distance inteneete scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "4.1",
+    "kind": "subdivision",
+    "gt_label": "Particle physics, topic 1",
+    "decoded": {
+      "doc2lora": "Particle physics, topic 1",
+      "icae": "Particle physics",
+      "incontext": "Particle physics, topic",
+      "keyllm": "particle, physics,, topic, lattice, measurement",
+      "vec2text": "in-distance arrteaete scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "4.2",
+    "kind": "subdivision",
+    "gt_label": "Particle physics, topic 2",
+    "decoded": {
+      "doc2lora": "Particle physics, topic 2",
+      "icae": "Particle physics",
+      "incontext": "Particle physics, topic",
+      "keyllm": "particle, physics,, topic, lattice, measurement",
+      "vec2text": "in-distance eliteenaa scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "5",
+    "kind": "field",
+    "gt_label": "Statistical mechanics",
+    "decoded": {
+      "doc2lora": "Statistical mechanics",
+      "icae": "Statistical physics",
+      "incontext": "Statistical",
+      "keyllm": "statistical, mechanics, lattice, measurement",
+      "vec2text": "in-distance saanissii scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "5.1",
+    "kind": "subdivision",
+    "gt_label": "Statistical mechanics, topic 1",
+    "decoded": {
+      "doc2lora": "Statistical mechanics, topic 1",
+      "icae": "Statistical physics",
+      "incontext": "Statistical mechanics, topic",
+      "keyllm": "statistical, mechanics,, topic, lattice, measurement",
+      "vec2text": "in-distance ainisrnri scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "5.2",
+    "kind": "subdivision",
+    "gt_label": "Statistical mechanics, topic 2",
+    "decoded": {
+      "doc2lora": "Statistical mechanics, topic 2",
+      "icae": "Statistical physics",
+      "incontext": "Statistical mechanics, topic",
+      "keyllm": "statistical, mechanics,, topic, lattice, measurement",
+      "vec2text": "in-distance nsalinnsl scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "6",
+    "kind": "field",
+    "gt_label": "Nonlinear optics",
+    "decoded": {
+      "doc2lora": "Nonlinear optics",
+      "icae": "Nonlinear physics",
+      "incontext": "Nonlinear",
+      "keyllm": "nonlinear, optics, lattice, measurement",
+      "vec2text": "in-distance anlnslrss scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "6.1",
+    "kind": "subdivision",
+    "gt_label": "Nonlinear optics, topic 1",
+    "decoded": {
+      "doc2lora": "Nonlinear optics, topic 1",
+      "icae": "Nonlinear physics",
+      "incontext": "Nonlinear optics, topic",
+      "keyllm": "nonlinear, optics,, topic, lattice, measurement",
+      "vec2text": "in-distance rlitliast scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "6.2",
+    "kind": "subdivision",
+    "gt_label": "Nonlinear optics, topic 2",
+    "decoded": {
+      "doc2lora": "Nonlinear optics, topic 2",
+      "icae": "Nonlinear physics",
+      "incontext": "Nonlinear optics, topic",
+      "keyllm": "nonlinear, optics,, topic, lattice, measurement",
+      "vec2text": "in-distance raeeseeas scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "7",
+    "kind": "field",
+    "gt_label": "Plasma physics",
+    "decoded": {
+      "doc2lora": "Plasma physics",
+      "icae": "Plasma physics",
+      "incontext": "Plasma",
+      "keyllm": "plasma, physics, lattice, measurement",
+      "vec2text": "in-distance sssrrnrrn scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "7.1",
+    "kind": "subdivision",
+    "gt_label": "Plasma physics, topic 1",
+    "decoded": {
+      "doc2lora": "Plasma physics, topic 1",
+      "icae": "Plasma physics",
+      "incontext": "Plasma physics, topic",
+      "keyllm": "plasma, physics,, topic, lattice, measurement",
+      "vec2text": "in-distance rretlstli scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "7.2",
+    "kind": "subdivision",
+    "gt_label": "Plasma physics, topic 2",
+    "decoded": {
+      "doc2lora": "Plasma physics, topic 2",
+      "icae": "Plasma physics",
+      "incontext": "Plasma physics, topic",
+      "keyllm": "plasma, physics,, topic, lattice, measurement",
+      "vec2text": "in-distance risniirii scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "8",
+    "kind": "field",
+    "gt_label": "Superconductivity",
+    "decoded": {
+      "doc2lora": "Superconductivity",
+      "icae": "Superconductivity physics",
+      "incontext": "Superconductivity",
+      "keyllm": "superconductivity, lattice, measurement",
+      "vec2text": "in-distance lnlietras scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "8.1",
+    "kind": "subdivision",
+    "gt_label": "Superconductivity, topic 1",
+    "decoded": {
+      "doc2lora": "Superconductivity, topic 1",
+      "icae": "Superconductivity, physics",
+      "incontext": "Superconductivity, topic",
+      "keyllm": "superconductivity,, topic, lattice, measurement",
+      "vec2text": "in-distance irlrnntte scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "8.2",
+    "kind": "subdivision",
+    "gt_label": "Superconductivity, topic 2",
+    "decoded": {
+      "doc2lora": "Superconductivity, topic 2",
+      "icae": "Superconductivity, physics",
+      "incontext": "Superconductivity, topic",
+      "keyllm": "superconductivity,, topic, lattice, measurement",
+      "vec2text": "in-distance isserlean scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "9",
+    "kind": "field",
+    "gt_label": "Atomic and molecular physics",
+    "decoded": {
+      "doc2lora": "Atomic and molecular physics",
+      "icae": "Atomic physics",
+      "incontext": "Atomic and molecular",
+      "keyllm": "atomic, molecular, physics, lattice, measurement",
+      "vec2text": "in-distance lltisssri scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "9.1",
+    "kind": "subdivision",
+    "gt_label": "Atomic and molecular physics, topic 1",
+    "decoded": {
+      "doc2lora": "Atomic and molecular physics, topic 1",
+      "icae": "Atomic physics",
+      "incontext": "Atomic and molecular physics, topic",
+      "keyllm": "atomic, molecular, physics,, topic, lattice, measurement",
+      "vec2text": "in-distance lrsetlnni scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  },
+  {
+    "code": "9.2",
+    "kind": "subdivision",
+    "gt_label": "Atomic and molecular physics, topic 2",
+    "decoded": {
+      "doc2lora": "Atomic and molecular physics, topic 2",
+      "icae": "Atomic physics",
+      "incontext": "Atomic and molecular physics, topic",
+      "keyllm": "atomic, molecular, physics,, topic, lattice, measurement",
+      "vec2text": "in-distance alsrtaetr scattering",
+      "t2l_gte": "Social psychology",
+      "t2l_hidden": "Social psychology",
+      "t2l_dw": "Social psychology"
+    }
+  }
+]

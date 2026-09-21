@@ -105,12 +105,26 @@ TIERS: dict[str, list[str]] = {
 # Tiers we actually ship as a Zenodo record. `aps` is inventoried, not bundled.
 SHIPPED = ("results", "s2and")
 
+# Files a tier's globs sweep up but that nothing in this workflow produces or reads. The
+# `results_*.csv` patterns are deliberately broad (one per eval suffix), so a suffix whose
+# chain has been retired has to be named here or a stale file on disk walks back into the
+# manifest on the next regeneration.
+EXCLUDE: tuple[str, ...] = (
+    # ICAE is a decoding comparison in this paper -- it appears in no row of any reported
+    # similarity table, and its benchmark-evaluation rules were removed with icae.smk. These
+    # CSVs have had no producer and no consumer since; shipping them invites a reader to
+    # look for numbers that no table draws on.
+    "data/kron/results_*_icae.csv",
+    "data/s2and/results_*_icae.csv",
+)
+
 
 def collect(tier: str) -> list[Path]:
+    excluded = {p for pattern in EXCLUDE for p in SRC.glob(pattern)}
     seen: list[Path] = []
     for pattern in TIERS[tier]:
         for p in sorted(SRC.glob(pattern)):
-            if p.is_file() and p not in seen:
+            if p.is_file() and p not in excluded and p not in seen:
                 seen.append(p)
     return seen
 

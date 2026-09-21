@@ -1,0 +1,34 @@
+{
+  "field": "sample",
+  "seed": 20260921,
+  "papers": 3000,
+  "authors": 400,
+  "author_paper_rows": 7722,
+  "topics": 10,
+  "dim": 64,
+  "label_nodes": 30,
+  "planted_order": [
+    "qwen_genkron_emb.npz",
+    "sbert_allmpnet.npz",
+    "qwen_kron_emb.npz",
+    "baseline_gte.npz",
+    "baseline_embeddinggemma.npz",
+    "baseline_specter2.npz",
+    "baseline_instructor.npz",
+    "mistral_norm_lora_emb.npz",
+    "qwen_norm_lora_emb.npz",
+    "gemma_norm_lora_emb.npz"
+  ],
+  "method_noise": {
+    "qwen_genkron_emb.npz": 0.35,
+    "sbert_allmpnet.npz": 0.45,
+    "qwen_kron_emb.npz": 0.55,
+    "baseline_gte.npz": 0.7,
+    "baseline_embeddinggemma.npz": 0.9,
+    "baseline_specter2.npz": 1.15,
+    "baseline_instructor.npz": 1.45,
+    "qwen_norm_lora_emb.npz": 1.8,
+    "gemma_norm_lora_emb.npz": 2.1,
+    "mistral_norm_lora_emb.npz": 1.7
+  }
+}

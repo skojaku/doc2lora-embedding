@@ -49,8 +49,12 @@ GCB_CACHED = {
     "sbert": ("sbert_allmpnet.npz", "vecs"),
     "specter2": ("baseline_specter2.npz", "vecs"),
     "instructor": ("baseline_instructor.npz", "vecs"),
-    "icae": ("icae_emb.npz", "vecs"),                 # #63's ICAE baseline, free to carry along
 }
+# No icae row: the rules that embedded the benchmark corpora for ICAE are gone (ICAE is a
+# decoding comparison here, reported in no similarity table), so icae_emb.npz has no producer
+# and gcb_pool_scores would only ever log "skip icae: absent". Leaving it listed was also a
+# hazard: a stale icae_emb.npz under a bench tree would silently shrink the all-method
+# coverage intersection that defines this chain's evaluation units.
 
 
 def _field_text(field):

@@ -1,0 +1,336 @@
+{
+  "judges": {
+    "local-fuzzy": "local/fuzzy"
+  },
+  "n_nodes": 30,
+  "control": {
+    "gt_vs_method": {
+      "doc2lora": {
+        "gt_wins": 0.0,
+        "tie": 1.0,
+        "method_wins": 0.0,
+        "n": 30
+      },
+      "icae": {
+        "gt_wins": 0.8333,
+        "tie": 0.1667,
+        "method_wins": 0.0,
+        "n": 30
+      },
+      "keyllm": {
+        "gt_wins": 1.0,
+        "tie": 0.0,
+        "method_wins": 0.0,
+        "n": 30
+      },
+      "vec2text": {
+        "gt_wins": 1.0,
+        "tie": 0.0,
+        "method_wins": 0.0,
+        "n": 30
+      },
+      "incontext": {
+        "gt_wins": 0.0,
+        "tie": 1.0,
+        "method_wins": 0.0,
+        "n": 30
+      },
+      "t2l_gte": {
+        "gt_wins": 1.0,
+        "tie": 0.0,
+        "method_wins": 0.0,
+        "n": 30
+      },
+      "t2l_hidden": {
+        "gt_wins": 1.0,
+        "tie": 0.0,
+        "method_wins": 0.0,
+        "n": 30
+      },
+      "t2l_dw": {
+        "gt_wins": 1.0,
+        "tie": 0.0,
+        "method_wins": 0.0,
+        "n": 30
+      }
+    },
+    "gt_vs_gt_tie_rate": 1.0
+  },
+  "field": [
+    "doc2lora",
+    "icae",
+    "keyllm",
+    "vec2text",
+    "incontext",
+    "t2l_gte",
+    "t2l_hidden",
+    "t2l_dw"
+  ],
+  "methods": {
+    "doc2lora": {
+      "win_rate": 0.9167,
+      "boot_sd": 0.0049,
+      "per_judge": {
+        "local-fuzzy": 0.9167
+      },
+      "n_nodes": 30
+    },
+    "icae": {
+      "win_rate": 0.7238,
+      "boot_sd": 0.0125,
+      "per_judge": {
+        "local-fuzzy": 0.7238
+      },
+      "n_nodes": 30
+    },
+    "keyllm": {
+      "win_rate": 0.581,
+      "boot_sd": 0.0086,
+      "per_judge": {
+        "local-fuzzy": 0.581
+      },
+      "n_nodes": 30
+    },
+    "vec2text": {
+      "win_rate": 0.2048,
+      "boot_sd": 0.0348,
+      "per_judge": {
+        "local-fuzzy": 0.2048
+      },
+      "n_nodes": 30
+    },
+    "incontext": {
+      "win_rate": 0.9167,
+      "boot_sd": 0.0049,
+      "per_judge": {
+        "local-fuzzy": 0.9167
+      },
+      "n_nodes": 30
+    },
+    "t2l_gte": {
+      "win_rate": 0.219,
+      "boot_sd": 0.0113,
+      "per_judge": {
+        "local-fuzzy": 0.219
+      },
+      "n_nodes": 30
+    },
+    "t2l_hidden": {
+      "win_rate": 0.219,
+      "boot_sd": 0.0113,
+      "per_judge": {
+        "local-fuzzy": 0.219
+      },
+      "n_nodes": 30
+    },
+    "t2l_dw": {
+      "win_rate": 0.219,
+      "boot_sd": 0.0113,
+      "per_judge": {
+        "local-fuzzy": 0.219
+      },
+      "n_nodes": 30
+    }
+  },
+  "head_to_head": {
+    "doc2lora|icae": {
+      "n": 30,
+      "tie": 5,
+      "doc2lora": 25,
+      "rate_doc2lora": 0.9167,
+      "rate_icae": 0.0833
+    },
+    "doc2lora|keyllm": {
+      "n": 30,
+      "tie": 0,
+      "doc2lora": 30,
+      "rate_doc2lora": 1.0,
+      "rate_keyllm": 0.0
+    },
+    "doc2lora|vec2text": {
+      "n": 30,
+      "tie": 0,
+      "doc2lora": 30,
+      "rate_doc2lora": 1.0,
+      "rate_vec2text": 0.0
+    },
+    "doc2lora|incontext": {
+      "n": 30,
+      "tie": 30,
+      "rate_doc2lora": 0.5,
+      "rate_incontext": 0.5
+    },
+    "doc2lora|t2l_gte": {
+      "n": 30,
+      "tie": 0,
+      "doc2lora": 30,
+      "rate_doc2lora": 1.0,
+      "rate_t2l_gte": 0.0
+    },
+    "doc2lora|t2l_hidden": {
+      "n": 30,
+      "tie": 0,
+      "doc2lora": 30,
+      "rate_doc2lora": 1.0,
+      "rate_t2l_hidden": 0.0
+    },
+    "doc2lora|t2l_dw": {
+      "n": 30,
+      "tie": 0,
+      "doc2lora": 30,
+      "rate_doc2lora": 1.0,
+      "rate_t2l_dw": 0.0
+    },
+    "icae|keyllm": {
+      "n": 30,
+      "tie": 2,
+      "icae": 26,
+      "keyllm": 2,
+      "rate_icae": 0.9,
+      "rate_keyllm": 0.1
+    },
+    "icae|vec2text": {
+      "n": 30,
+      "tie": 0,
+      "icae": 30,
+      "rate_icae": 1.0,
+      "rate_vec2text": 0.0
+    },
+    "icae|incontext": {
+      "n": 30,
+      "tie": 5,
+      "incontext": 25,
+      "rate_icae": 0.0833,
+      "rate_incontext": 0.9167
+    },
+    "icae|t2l_gte": {
+      "n": 30,
+      "tie": 0,
+      "icae": 30,
+      "rate_icae": 1.0,
+      "rate_t2l_gte": 0.0
+    },
+    "icae|t2l_hidden": {
+      "n": 30,
+      "tie": 0,
+      "icae": 30,
+      "rate_icae": 1.0,
+      "rate_t2l_hidden": 0.0
+    },
+    "icae|t2l_dw": {
+      "n": 30,
+      "tie": 0,
+      "icae": 30,
+      "rate_icae": 1.0,
+      "rate_t2l_dw": 0.0
+    },
+    "keyllm|vec2text": {
+      "n": 30,
+      "tie": 0,
+      "vec2text": 1,
+      "keyllm": 29,
+      "rate_keyllm": 0.9667,
+      "rate_vec2text": 0.0333
+    },
+    "incontext|keyllm": {
+      "n": 30,
+      "tie": 0,
+      "incontext": 30,
+      "rate_incontext": 1.0,
+      "rate_keyllm": 0.0
+    },
+    "keyllm|t2l_gte": {
+      "n": 30,
+      "tie": 0,
+      "keyllm": 30,
+      "rate_keyllm": 1.0,
+      "rate_t2l_gte": 0.0
+    },
+    "keyllm|t2l_hidden": {
+      "n": 30,
+      "tie": 0,
+      "keyllm": 30,
+      "rate_keyllm": 1.0,
+      "rate_t2l_hidden": 0.0
+    },
+    "keyllm|t2l_dw": {
+      "n": 30,
+      "tie": 0,
+      "keyllm": 30,
+      "rate_keyllm": 1.0,
+      "rate_t2l_dw": 0.0
+    },
+    "incontext|vec2text": {
+      "n": 30,
+      "tie": 0,
+      "incontext": 30,
+      "rate_incontext": 1.0,
+      "rate_vec2text": 0.0
+    },
+    "t2l_gte|vec2text": {
+      "n": 30,
+      "tie": 8,
+      "vec2text": 10,
+      "t2l_gte": 12,
+      "rate_t2l_gte": 0.5333,
+      "rate_vec2text": 0.4667
+    },
+    "t2l_hidden|vec2text": {
+      "n": 30,
+      "tie": 8,
+      "vec2text": 10,
+      "t2l_hidden": 12,
+      "rate_t2l_hidden": 0.5333,
+      "rate_vec2text": 0.4667
+    },
+    "t2l_dw|vec2text": {
+      "n": 30,
+      "tie": 8,
+      "vec2text": 10,
+      "t2l_dw": 12,
+      "rate_t2l_dw": 0.5333,
+      "rate_vec2text": 0.4667
+    },
+    "incontext|t2l_gte": {
+      "n": 30,
+      "tie": 0,
+      "incontext": 30,
+      "rate_incontext": 1.0,
+      "rate_t2l_gte": 0.0
+    },
+    "incontext|t2l_hidden": {
+      "n": 30,
+      "tie": 0,
+      "incontext": 30,
+      "rate_incontext": 1.0,
+      "rate_t2l_hidden": 0.0
+    },
+    "incontext|t2l_dw": {
+      "n": 30,
+      "tie": 0,
+      "incontext": 30,
+      "rate_incontext": 1.0,
+      "rate_t2l_dw": 0.0
+    },
+    "t2l_gte|t2l_hidden": {
+      "n": 30,
+      "tie": 30,
+      "rate_t2l_gte": 0.5,
+      "rate_t2l_hidden": 0.5
+    },
+    "t2l_dw|t2l_gte": {
+      "n": 30,
+      "tie": 30,
+      "rate_t2l_dw": 0.5,
+      "rate_t2l_gte": 0.5
+    },
+    "t2l_dw|t2l_hidden": {
+      "n": 30,
+      "tie": 30,
+      "rate_t2l_dw": 0.5,
+      "rate_t2l_hidden": 0.5
+    }
+  },
+  "n_pair_decisions": 1110,
+  "n_errors": 0
+}

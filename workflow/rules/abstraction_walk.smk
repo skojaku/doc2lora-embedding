@@ -17,7 +17,6 @@ AW_LEADS = j(SCRIPTS, "wiki_leads.json")   # the seed documents, not an output
 AW_DOC2LORA = j(AW_DIR, "abstraction_walk.json")
 AW_ICAE = j(AW_DIR, "icae_abstraction_walk.json")
 AW_VEC2TEXT = j(AW_DIR, "vec2text_abstraction_walk.json")
-AW_ICAE_WEIGHTS = config["icae_weights"]
 
 
 # leads + script are git-tracked next to the tracked output (Fig. 2 panel (b)
@@ -37,12 +36,17 @@ rule aw_doc2lora:
         "CUDA_VISIBLE_DEVICES={AW_GPU} python {input.script}"
 
 
+# Same ancient() reasoning as aw_doc2lora: the output is a fetched artifact, so a clone
+# must not re-run a GPU decode over mtimes alone. The ICAE checkpoint is NOT an input --
+# icae_label.py resolves it from config.yaml:icae_weights at run time, exactly as the other
+# ICAE arms do (bt_icae_raw, kg_decode_icae, fig2_decode_curated_icae). Declaring it here
+# made this rule the only one that could not even be dry-run without the third-party
+# weights unpacked, which broke `snakemake -n abstraction_walk_all`.
 rule aw_icae:
     input:
-        leads = AW_LEADS,
-        weights = AW_ICAE_WEIGHTS,
-        helper = j(SCRIPTS, "icae_label.py"),
-        script = j(SCRIPTS, "icae_abstraction_walk.py"),
+        leads = ancient(AW_LEADS),
+        helper = ancient(j(SCRIPTS, "icae_label.py")),
+        script = ancient(j(SCRIPTS, "icae_abstraction_walk.py")),
     output:
         result = AW_ICAE,
     resources:
