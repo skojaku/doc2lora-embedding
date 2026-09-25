@@ -52,21 +52,21 @@ def ci(reps):
 
 
 def boot_collab(df, col, nboot):
-    """AUC per window, averaged; bootstrap resamples candidate pairs within each window."""
+    """One AUC over the candidate pairs of every anchor window pooled together.
+
+    The manuscript reports the pooled quantity (workflow/scripts/bootstrap.py ignores
+    the window column), and the two tables have to be readable against each other, so this control
+    pools as well. The per-window AUCs are reported separately in \tabref{collab-per-window},
+    built by workflow/scripts/groupc/collab_per_window.py.
+    """
     d = df.dropna(subset=[col])
-    wins = [g for _, g in d.groupby("window") if g.y.nunique() > 1]
-    if not wins:
+    if d.y.nunique() < 2:
         return np.nan, (np.nan, np.nan)
-    ys = [g.y.values.astype(np.int8) for g in wins]
-    ss = [g[col].values.astype(np.float64) for g in wins]
-    point = float(np.mean([auc(y, s) for y, s in zip(ys, ss)]))
-    reps = []
-    for _ in range(nboot):
-        vals = []
-        for y, s in zip(ys, ss):
-            k = rng.integers(0, len(y), len(y))
-            vals.append(auc(y[k], s[k]))
-        reps.append(np.nanmean(vals))
+    y = d.y.values.astype(np.int8)
+    s = d[col].values.astype(np.float64)
+    point = auc(y, s)
+    n = len(d)
+    reps = [auc(y[k], s[k]) for k in (rng.integers(0, n, n) for _ in range(nboot))]
     return point, ci(reps)
 
 
@@ -142,19 +142,25 @@ NICE = {"gene": "Doc2LoRA (raw)", "genkron": "Doc2LoRA $+g_\\theta$ (reported)",
         "sbert": "SBERT all-mpnet", "sbert_kron_gc": "\\quad $+g_\\theta$",
         "sbert_kron_gc_pre2018": "\\quad $+g_\\theta$ (pre-2018)",
         "specter2": "SPECTER2", "specter2_kron_gc": "\\quad $+g_\\theta$",
-        "icae": "ICAE (mean slot)",
+        "icae": "ICAE (mean slot)", "icae_genkron": "\\quad $+g_\\theta$ (16.8M-param map)",
         "instructor": "Instructor", "instructor_kron_gc": "\\quad $+g_\\theta$",
         "embeddinggemma": "EmbeddingGemma", "embeddinggemma_kron_gc": "\\quad $+g_\\theta$",
         "bge": "BGE-large-en-v1.5 (2023)", "bge_kron_gc": "\\quad $+g_\\theta$",
-        "gte": "GTE-multilingual-base (2024)", "gte_kron_gc": "\\quad $+g_\\theta$",
+        "gte": "GTE-large-en-v1.5", "gte_kron_gc": "\\quad $+g_\\theta$",
         "e5mistral": "E5-Mistral-7B-instruct", "e5mistral_kron_gc": "\\quad $+g_\\theta$"}
 TASKS = [("collab", "collab AUC"), ("np", "next-paper AUC"), ("topic", "topic macro-F1")]
+
+
+def _nz(v, dec=3):
+    """Drop the leading zero on a quantity bounded by 1, matching Table 1."""
+    s = f"{v:.{dec}f}"
+    return s.replace("0.", ".", 1) if abs(v) < 1 else s
 
 
 def fmt(v, lo, hi):
     if not np.isfinite(v):
         return "---"
-    return f"{v:.3f}\\,{{\\tiny[{lo:.3f},{hi:.3f}]}}"
+    return f"{_nz(v)}\\,{{\\tiny[{_nz(lo)},{_nz(hi)}]}}"
 
 
 def cell(field, task, method):

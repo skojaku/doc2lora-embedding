@@ -22,8 +22,36 @@ import torch
 
 sys.path.insert(0, "workflow/scripts")
 sys.path.insert(0, "data/layer_bands")
-from bench_data import load  # noqa: E402
-from eval_collab2 import author_cos  # noqa: E402
+from eval_collab import load  # noqa: E402
+from eval_collab2 import author_cos as _author_cos_sparse  # noqa: E402
+
+
+def author_cos(cand, au_papers, paper_emb, prow):
+    """Same quantity as eval_collab2.author_cos, computed without the float64 upcast.
+
+    The shared version builds a float64 incidence matrix and multiplies it by the embedding
+    matrix, which promotes the whole matrix: for the APS gene family that is a 94 GB temporary
+    per call, and the machine spends its time compacting memory instead of scoring. Averaging
+    each author's rows directly touches the same values and keeps them in float32.
+    """
+    au = sorted({a for p in cand for a in p})
+    arow = {a: i for i, a in enumerate(au)}
+    AE = np.zeros((len(au), paper_emb.shape[1]), np.float32)
+    n_paper = np.zeros(len(au), np.int64)
+    for a in au:
+        idx = [prow[p] for p in au_papers.get(a, ()) if p in prow]
+        if idx:
+            AE[arow[a]] = paper_emb[idx].mean(0)
+            n_paper[arow[a]] = len(idx)
+    AE /= (np.linalg.norm(AE, axis=1, keepdims=True) + 1e-9)
+    out = np.full(len(cand), np.nan, np.float32)
+    cov = np.zeros(len(cand), bool)
+    for k, (a, b) in enumerate(cand):
+        ia, ib = arow[a], arow[b]
+        if n_paper[ia] and n_paper[ib]:
+            out[k] = float(AE[ia] @ AE[ib])
+            cov[k] = True
+    return out, cov
 
 FIELD = snakemake.wildcards.field                    # noqa: F821
 METHODS = dict(snakemake.params.methods)             # noqa: F821  {name: [path, key]}

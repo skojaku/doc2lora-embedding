@@ -64,6 +64,9 @@ include: "workflow/rules/groupc_incoherent.smk" # Tab. incoherent-control (App.)
 # sit behind their own targets and not in `paper_assets` (see REPRODUCE.md):
 include: "workflow/rules/bench.smk"             # the sliced benchmark subsets
 include: "workflow/rules/groupc_bench.smk"      # temporal-hardening claims (App. datasets, #72)
+include: "workflow/rules/icae.smk"              # ICAE slots + its citation transform
+include: "workflow/rules/groupc_s2and.smk"      # App. symmetric-adapter: the S2AND half, the
+                                                # raw-score table, the gain figure, head-to-head
 include: "workflow/rules/t2l.smk"               # Text-to-LoRA hypernetwork-adapter baseline
 include: "workflow/rules/actpatch.smk"          # the base model's own hidden states as a decoder
 include: "workflow/rules/recipe_fusion.smk"     # the recipe blend quoted in App. recipe-fusion
@@ -108,6 +111,11 @@ rule paper_assets:
         # The same rule also writes figs/prompt_sensitivity_edge.tex, whose numbers
         # the appendix states in prose rather than \input-ing.
         rules.kg_psens_all.input,
+        # Tab. symmetric-raw       -> <figs_dir>/symmetric_raw_scores.tex
+        # Tab. symmetric-summary   -> <figs_dir>/symmetric_adapter_summary.tex
+        # Fig. symmetric-gain      -> <figs_dir>/symmetric_adapter_gain.pdf   (App.)
+        # Tab. collab-per-window   -> <figs_dir>/collab_per_window.tex        (App. tables)
+        rules.groupc_s2and.input,
         # Spearman rho quoted in Sec. methods (mean-over-rank vs full tensor).
         # Emits the CSV only; the number is transcribed into the text by hand.
         POOLING_CSV,

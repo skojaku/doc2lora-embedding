@@ -20,7 +20,7 @@ MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "512"))
 BATCH = int(os.environ.get("BATCH", "8"))
 OUT = "data/general_adapter"
 
-df = pd.read_parquet(f"{OUT}/pool_text.parquet")
+df = pd.read_parquet(os.environ.get("POOL_TEXT", f"{OUT}/pool_text.parquet"))
 keys = df.pid.tolist()
 texts = [t if isinstance(t, str) and t.strip() else "." for t in df.text.tolist()]
 print(f"[{ENC}] embedding {len(texts):,} pool papers (max_tokens={MAX_TOKENS} batch={BATCH})", flush=True)
@@ -38,5 +38,6 @@ for i in range(0, len(texts), CH):
     if i % 2560 == 0:
         print(f"  {min(i+CH,len(texts))}/{len(texts)} [{time.time()-t0:.0f}s]", flush=True)
 
-np.savez(f"{OUT}/pool_genes_{ENC}.npz", pids=np.array(keys), embeddings=out)
-print(f"[saved] {OUT}/pool_genes_{ENC}.npz dim={out.shape[1]} ({time.time()-t0:.0f}s)", flush=True)
+_out = os.environ.get("POOL_OUT", f"{OUT}/pool_genes_{ENC}.npz")
+np.savez(_out, pids=np.array(keys), embeddings=out)
+print(f"[saved] {_out} dim={out.shape[1]} ({time.time()-t0:.0f}s)", flush=True)

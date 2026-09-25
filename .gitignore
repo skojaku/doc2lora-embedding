@@ -13,12 +13,11 @@ workflow/config.yaml
 # ── Everything a rule writes ─────────────────────────────────────────────
 # data/ is the single output root: corpora you fetch, embeddings, adapters,
 # score pools, decodes, and the generated tables and figures under results/.
-# The Zenodo manifest, this directory's README, and the bundled sample corpus
-# are primitives.
+# The Zenodo manifest and this directory's README are primitives. The sample
+# corpus is not: `make_sample.py` generates it from a seed.
 data/*
 !data/ARTIFACTS.tsv
 !data/README.md
-!data/sample/
 results/
 dist/
 

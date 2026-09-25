@@ -1,6 +1,7 @@
 """[GPU] Apply a trained GENERAL kron adapter to a gene npz -> genkron npz (same key/format).
 Usage: CUDA_VISIBLE_DEVICES=0 python apply_general.py <enc> <in_npz> <out_npz> [key=embeddings]
 """
+import os
 import sys
 import numpy as np
 import torch
@@ -11,7 +12,8 @@ from kron import KronAdapter
 ENC, IN, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
 KEY = sys.argv[4] if len(sys.argv) > 4 else "embeddings"
 dev = "cuda"
-ck = torch.load(f"data/general_adapter/adapter_general_{ENC}.pt", map_location=dev)
+ck = torch.load(os.environ.get("ADAPTER",
+    f"data/general_adapter/adapter_general_{ENC}.pt"), map_location=dev)
 L, D = ck["L"], ck["D"]
 m = KronAdapter(L=L, d=512).to(dev); m.load_state_dict(ck["state"]); m.eval()
 

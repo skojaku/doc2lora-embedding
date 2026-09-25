@@ -51,6 +51,16 @@ METHOD_FILES = {
     "t2l_gte": "t2l_gte_labels.json",            # {code: label}    E0
     "t2l_hidden": "t2l_hidden_labels.json",      # {code: label}    E1
     "t2l_dw": "t2l_dw_labels.json",              # {code: label}    E2
+    # BERTopic in manual (predefined-cluster) mode -- the PACS node IS the topic,
+    # so only its representation step runs. Native output is a c-TF-IDF keyword
+    # list, scored as-is like KeyLLM's. `_kbi` re-ranks those keywords with
+    # KeyBERTInspired; the `3` arms are the same ranking truncated to 3 words, a
+    # LENGTH-MATCHED control for the ~2.4-word labels the fuzzy metric favours.
+    # bertopic_labels.py, CAP=2000 members per node (doc2lora's CAP).
+    "bertopic": "bertopic_labels.json",            # {code: kw-list} c-TF-IDF top 10
+    "bertopic3": "bertopic3_labels.json",          # {code: kw-list} c-TF-IDF top 3
+    "bertopic_kbi": "bertopic_kbi_labels.json",    # {code: kw-list} KeyBERTInspired top 10
+    "bertopic_kbi3": "bertopic_kbi3_labels.json",  # {code: kw-list} KeyBERTInspired top 3
 }
 
 RNG = random.Random(42)

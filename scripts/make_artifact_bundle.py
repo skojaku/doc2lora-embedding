@@ -61,6 +61,7 @@ TIERS: dict[str, list[str]] = {
         "data/kron/adapter_*.pt",
         "data/general_adapter/adapter_general_*.pt",
         "data/general_adapter/leakage_overlap.json",
+        "data/general_adapter/triplets_1x.parquet",
         "data/general_adapter/triplets.parquet",
         # cluster-labelling chain
         "data/pacs/results/*.parquet",

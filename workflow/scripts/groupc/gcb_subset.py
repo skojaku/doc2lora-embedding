@@ -5,7 +5,7 @@ not necessary: data/icae/{field}_eval_ids.parquet (#63) lists exactly the papers
 the collab / next-paper / topic harness touches, and slicing to it was verified byte-identical for
 evaluation.  Every Group C encoder is run on that subset.
 
-Years come from the SAME table the benchmark harness uses (bench_data.load), not from the OpenAlex
+Years come from the SAME table the benchmark harness uses (eval_collab.load), not from the OpenAlex
 master, because APS ids are not OpenAlex ids.
 
 Out: data/groupc/bench/{field}/subset_text.parquet [paper_id, title, abstract, text, year]
@@ -18,7 +18,7 @@ import pandas as pd
 
 sys.path.insert(0, "workflow/scripts")
 sys.path.insert(0, "data/layer_bands")
-from bench_data import load  # noqa: E402
+from eval_collab import load  # noqa: E402
 
 FIELD = snakemake.wildcards.field                      # noqa: F821
 ids = pd.read_parquet(snakemake.params.eval_ids)       # noqa: F821

@@ -1,4 +1,4 @@
-"""Build the per-node label table (Tab. hierarchy-labels) from the SCORED labels.
+"""Build paper/iclr2026/hierarchy_rows.tex from the SCORED labels.
 
 The table used to be hand-assembled, and drifted: it showed naming-LLM outputs for
 \texttt{ICAE} / \texttt{vec2text} that the evaluation never scored. Generating it
@@ -9,8 +9,8 @@ Long labels are truncated at a word boundary for the page; the evaluation scores
 them in full.
 
 Reads:  label_eval_nodes.json, nodes.json (for the PACS display names)
-Writes: <figs_dir>/hierarchy_rows.tex
-Run:    python make_hierarchy_rows.py --out <figs_dir>/hierarchy_rows.tex
+Writes: paper/iclr2026/hierarchy_rows.tex
+Run:    python make_hierarchy_rows.py
 """
 import argparse
 import json
@@ -19,6 +19,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 from bench_data import out_dir   # bench_data.py sits next to this file
 DATA = out_dir("labels")           # where this chain writes
+
 
 METHODS = ["doc2lora", "keyllm", "icae", "vec2text"]
 MAXCH = 58

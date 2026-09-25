@@ -34,7 +34,7 @@ JUDGES = {
     "mistral-medium": "mistralai/mistral-medium-3.1",
 }
 
-# Current roster (2026-09-18): five labs, one model each. Slugs
+# Current roster (@skojaku, 2026-09-18): five labs, one model each. Slugs
 # resolved against the live OpenRouter catalogue; gemini is reached through
 # Vertex on the GPU box instead. minimax and deepseek are out.
 JUDGES_V2 = {

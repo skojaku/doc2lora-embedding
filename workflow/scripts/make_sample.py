@@ -97,6 +97,16 @@ LABEL_STYLE = {
     "t2l_gte": lambda name, rng: "Social psychology",
     "t2l_hidden": lambda name, rng: "Social psychology",
     "t2l_dw": lambda name, rng: "Social psychology",
+    # BERTopic returns a c-TF-IDF keyword list, and the `3` arms truncate the same
+    # ranking to three words -- the length-matched control.
+    "bertopic": lambda name, rng: ", ".join(
+        [w.lower() for w in name.replace(",", "").split()] + ["lattice", "phase", "model"]),
+    "bertopic3": lambda name, rng: " ".join(
+        [w.lower() for w in name.replace(",", "").split()][:3]),
+    "bertopic_kbi": lambda name, rng: ", ".join(
+        [w.lower() for w in name.replace(",", "").split()][::-1] + ["coupling", "regime"]),
+    "bertopic_kbi3": lambda name, rng: " ".join(
+        [w.lower() for w in name.replace(",", "").split()][::-1][:3]),
 }
 
 

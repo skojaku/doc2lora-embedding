@@ -21,7 +21,8 @@ from bench_data import out_dir   # bench_data.py sits next to this file
 DATA = out_dir("labels")           # where this chain writes
 
 METHODS = ["doc2lora", "vec2text", "keyllm", "icae", "incontext",
-           "t2l_gte", "t2l_hidden", "t2l_dw"]   # T2L arms, #151
+           "t2l_gte", "t2l_hidden", "t2l_dw",   # T2L arms, #151
+           "bertopic", "bertopic3", "bertopic_kbi", "bertopic_kbi3"]  # BERTopic arms
 
 STOP = {"and", "of", "the", "in", "a", "for", "to", "on", "with", "or"}
 
@@ -87,7 +88,7 @@ def main():
     out = {"metric": "lexical_overlap", "headline": "fuzzy_token_set_ratio",
            "summary": summary, "per_node": per_node}
     (DATA / "label_eval_metric1.json").write_text(json.dumps(out, indent=2))
-    print("Metric 1 — lexical overlap (mean over 28 nodes):")
+    print(f"Metric 1 — lexical overlap (mean over {len(per_node)} nodes):")
     print(f"  {'method':10s} {'fuzzy':>8s} {'jaccard':>8s} {'rouge_l':>8s}")
     for m in METHODS:
         s = summary[m]

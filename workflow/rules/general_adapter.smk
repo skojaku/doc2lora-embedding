@@ -29,46 +29,78 @@ wildcard_constraints:
     ds="|".join(GA_S2AND),
 
 
-# fresh broad sample from the raw OpenAlex edge lists -> citation triplets (hard+easy negs) + pool text
+# THE SAMPLE THE PAPER REPORTS IS THE 1x ONE. A later data-scaling run re-drew the
+# citation sample and overwrote triplets.parquet with a larger, DIFFERENT draw: it is
+# not a superset, and only 29 of the reported 42,332 tuples survive in it. So the
+# reported transform -- and the ICAE transform that has to match it -- read the 1x
+# files, and this workflow treats those as the canonical ones.
+#
+# The 1x triplet ids ship with the artifact bundle (1.3 MB). Its text pool does not,
+# because the pool is not independent evidence: sample_edges.py writes exactly the
+# papers the triplets name, so the ids pin the text down and pool_text_1x is rebuilt
+# from them. That is what makes the reported transform reproducible rather than
+# merely archived.
+GA_SAMPLE = config.get("ga_sample", "_1x")            # "" re-draws instead
+# Obtained, not derived: this is the one file the reported transform cannot be
+# rebuilt without, so it is an input to the workflow like the corpora are. It ships
+# in the `results` artifact tier (1.3 MB, ids only).
+GA_TRIPLETS = config.get("ga_triplets", j(GA, f"triplets{GA_SAMPLE}.parquet"))
+GA_POOL_TEXT = j(GA, f"pool_text{GA_SAMPLE}.parquet")
+
+
+# A fresh broad draw from the raw OpenAlex edge lists. Seeded (default_rng(0)) but NOT
+# the reported sample: it writes the unsuffixed names, and re-running it is how the
+# reported one was lost.
 rule ga_sample_edges:
     output: trip=j(GA, "triplets.parquet"), pool=j(GA, "pool_text.parquet"),
     resources: mem_gb=120,
     shell: f"python {SCRIPTS}/sample_edges.py"
 
+rule ga_pool_text:
+    input: trip=GA_TRIPLETS,
+    output: pool=GA_POOL_TEXT,
+    resources: mem_gb=60,
+    shell: f"python {SCRIPTS}/pool_text_from_triplets.py --triplets {{input.trip}} --out {{output.pool}}"
+
 # fresh doc2lora embedding of the pool, per encoder
 rule ga_embed_pool:
-    input: pool=j(GA, "pool_text.parquet"),
-    output: npz=j(GA, "pool_genes_{enc}.npz"),
+    input: pool=GA_POOL_TEXT,
+    output: npz=j(GA, f"pool_genes_{{enc}}{GA_SAMPLE}.npz"),
     params: batch=lambda w: "16" if w.enc == "mistral" else "32",
     resources: gpu=1, mem_gb=40,
-    shell: f"{GA_ENV} MAX_TOKENS=512 BATCH={{params.batch}} {GPU} python {SCRIPTS}/embed_pool.py {{wildcards.enc}}"
+    shell: f"{GA_ENV} MAX_TOKENS=512 BATCH={{params.batch}} POOL_TEXT={{input.pool}} POOL_OUT={{output.npz}} {GPU} "
+           f"python {SCRIPTS}/embed_pool.py {{wildcards.enc}}"
 
+# Named for the sample it was trained on, because the bare name is a trap: on the
+# machine that produced the paper, adapter_general_qwen.pt is byte-identical to the 2x
+# adapter, and applying it reproduces the published vectors at cos .005 instead of 1.0.
 rule ga_train:
-    input: trip=j(GA, "triplets.parquet"), pool=j(GA, "pool_genes_{enc}.npz"),
-    output: adapter=j(GA, "adapter_general_{enc}.pt"),
+    input: trip=GA_TRIPLETS, pool=j(GA, f"pool_genes_{{enc}}{GA_SAMPLE}.npz"),
+    output: adapter=j(GA, f"adapter_general_{{enc}}{GA_SAMPLE}.pt"),
     resources: gpu=1, mem_gb=40,
-    shell: f"{GA_ENV} {GPU} python {SCRIPTS}/train_general.py {{wildcards.enc}}"
+    shell: f"{GA_ENV} TRIPLETS={{input.trip}} ADAPTER_OUT={{output.adapter}} {GPU} "
+           f"python {SCRIPTS}/train_general.py {{wildcards.enc}}"
 
 
 # ---- apply general adapter to each benchmark's genes ----
 rule ga_apply_oax:
-    input: adapter=j(GA, "adapter_general_{enc}.pt"), gene=j(OAX_EMB2, "{enc}_norm_lora_emb.npz"),
+    input: adapter=j(GA, f"adapter_general_{{enc}}{GA_SAMPLE}.pt"), gene=j(OAX_EMB2, "{enc}_norm_lora_emb.npz"),
     output: gk=j(OAX_EMB2, "{enc}_genkron_emb.npz"),
     resources: gpu=1, mem_gb=60,
-    shell: f"{GA_ENV} {GPU} python {SCRIPTS}/apply_general.py {{wildcards.enc}} {{input.gene}} {{output.gk}} embeddings"
+    shell: f"{GA_ENV} ADAPTER={{input.adapter}} {GPU} python {SCRIPTS}/apply_general.py {{wildcards.enc}} {{input.gene}} {{output.gk}} embeddings"
 
 rule ga_apply_aps:
-    input: adapter=j(GA, "adapter_general_{enc}.pt"), gene=j(APS_EMB2, "{enc}_norm_lora_emb.npz"),
+    input: adapter=j(GA, f"adapter_general_{{enc}}{GA_SAMPLE}.pt"), gene=j(APS_EMB2, "{enc}_norm_lora_emb.npz"),
     output: gk=j(APS_EMB2, "{enc}_genkron_emb.npz"),
     resources: gpu=1, mem_gb=60,
     wildcard_constraints: enc="|".join(GA_APS_ENC),
-    shell: f"{GA_ENV} {GPU} python {SCRIPTS}/apply_general.py {{wildcards.enc}} {{input.gene}} {{output.gk}} embeddings"
+    shell: f"{GA_ENV} ADAPTER={{input.adapter}} {GPU} python {SCRIPTS}/apply_general.py {{wildcards.enc}} {{input.gene}} {{output.gk}} embeddings"
 
 rule ga_apply_s2and:
-    input: adapter=j(GA, "adapter_general_{enc}.pt"), gene=j(S2, "proc", "{ds}", "genes_{enc}.npz"),
+    input: adapter=j(GA, f"adapter_general_{{enc}}{GA_SAMPLE}.pt"), gene=j(S2, "proc", "{ds}", "genes_{enc}.npz"),
     output: gk=j(S2, "proc", "{ds}", "genes_{enc}_genkron.npz"),
     resources: gpu=1, mem_gb=30,
-    shell: f"{GA_ENV} {GPU} python {SCRIPTS}/apply_general.py {{wildcards.enc}} {{input.gene}} {{output.gk}} embeddings"
+    shell: f"{GA_ENV} ADAPTER={{input.adapter}} {GPU} python {SCRIPTS}/apply_general.py {{wildcards.enc}} {{input.gene}} {{output.gk}} embeddings"
 
 
 # ---- evaluate (general genkron auto-included; _general suffix) ----

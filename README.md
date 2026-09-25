@@ -72,7 +72,7 @@ snakemake sample_judge -j1 \
 | 3 | Re-derive **everything from the corpora**, genes included | `snakemake paper_assets -j4` | 1–4 GPUs (≥48 GB total), ~200 GB disk, licensed APS corpus |
 
 ```bash
-snakemake -n paper_assets      # the whole DAG, nothing run: 200 jobs from a cold start
+snakemake -n paper_assets      # the whole DAG, nothing run: 329 jobs from a cold start
 ```
 
 `REPRODUCE.md` is the result → code map: for every figure, table, and quoted number,
@@ -153,7 +153,7 @@ published checkpoints. Rebuild them with `snakemake all_embeddings`.
 ## Layout
 
 ```
-Snakefile                 22 rule files, one target per reported asset
+Snakefile                 24 rule files, one target per reported asset
 workflow/rules/*.smk      one file per chain; its header says which result it makes
 workflow/scripts/         every script the rules call, in one directory
     bench_data.py           where the data lives, and where each chain writes
@@ -182,8 +182,9 @@ encoders. Three kinds of method appear:
   `gte-large` vector, run at all three points in its pipeline that could be called "the
   embedding"), and `ActPatch` (training-free activation patching of Qwen3-4B hidden
   states — the one baseline needing no third-party weights: `snakemake actpatch`).
-- **An LLM reading the documents directly** — in-context labelling and `KeyLLM` — which
-  sets the ceiling the vector methods are measured against.
+- **An LLM reading the documents directly** — in-context labelling, `KeyLLM`, and
+  `BERTopic`'s c-TF-IDF keywords — which set the ceiling the vector methods are measured
+  against.
 
 The invertible citation transform $g_\theta$ is applied on top of frozen idea genes, per
 field (`kron_adapter.smk`) and as a single general OpenAlex transform

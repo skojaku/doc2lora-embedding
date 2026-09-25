@@ -18,6 +18,7 @@ Registry: REGISTRY maps method name -> builder. Methods:
     sbert      sentence-transformers/all-mpnet-base-v2          (768)
     gte_large  Alibaba-NLP/gte-large-en-v1.5 (CLS)              (1024)  <- T2L's input
     specter2   allenai/specter2_base (+ proximity adapter)      (768)
+    specter1   allenai/specter (S2AND's own feature space)       (768)
     instructor hkunlp/instructor-large                          (768)
     text2vec   shibing624/text2vec-base-multilingual            (384)
 
@@ -118,6 +119,53 @@ def build_specter2(base="allenai/specter2_base", adapter="allenai/specter2",
     encode.adapter_path = adapter_path
     encode.dim = model.config.hidden_size
     encode.name = "specter2"
+    return encode
+
+
+# --------------------------------------------------------------------------- #
+# SPECTER v1  (allenai/specter) -- S2AND's own precomputed text feature
+# --------------------------------------------------------------------------- #
+def build_specter1(model_name="allenai/specter", batch_size=64, gpu=True, max_length=512):
+    """CLS-pooled SPECTER v1 (768-d).
+
+    This is NOT a competing text baseline: the S2AND release ships one precomputed SPECTER v1
+    vector per paper as the benchmark's reference text feature, and `data/s2and`
+    scores against exactly those vectors. The symmetric-supervision control (#145) therefore
+    needs g_theta trained in SPECTER v1 space, which means embedding the g_theta training pool
+    with this model.
+
+    SPECTER's native input is `title [SEP] abstract`. The pool text is stored as one string
+    ("Title: ...\\nAbstract: ..."), so `encode` splits that structure back apart when it is
+    present and falls back to the raw string when it is not.
+    """
+    import torch
+    from transformers import AutoModel, AutoTokenizer
+
+    dev = _device() if gpu else "cpu"
+    tok = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModel.from_pretrained(model_name).to(dev).eval()
+    sep = tok.sep_token or "[SEP]"
+
+    def _split(text):
+        """'Title: X\\nAbstract: Y' -> 'X[SEP]Y'; anything else passes through unchanged."""
+        t = text or ""
+        if t.startswith("Title:") and "\nAbstract:" in t:
+            title, abstract = t.split("\nAbstract:", 1)
+            return f"{title[len('Title:'):].strip()}{sep}{abstract.strip()}"
+        return t
+
+    @torch.no_grad()
+    def encode(texts):
+        inputs = [_split(t) for t in texts]
+        out = []
+        for s in range(0, len(inputs), batch_size):
+            enc = tok(inputs[s:s + batch_size], padding=True, truncation=True,
+                      max_length=max_length, return_tensors="pt").to(dev)
+            out.append(model(**enc).last_hidden_state[:, 0, :].cpu().float().numpy())
+        return np.concatenate(out, axis=0).astype(np.float32)
+
+    encode.dim = model.config.hidden_size
+    encode.name = "specter1"
     return encode
 
 
@@ -294,6 +342,7 @@ def build_gte(model_name="Alibaba-NLP/gte-large-en-v1.5", batch_size=64, gpu=Tru
 REGISTRY = {
     "sbert": build_sbert,
     "specter2": build_specter2,
+    "specter1": build_specter1,               # S2AND's reference feature space (#145)
     "instructor": build_instructor,
     "text2vec": build_text2vec,
     "embeddinggemma": build_embeddinggemma,   # document prompt (see build_embeddinggemma default)

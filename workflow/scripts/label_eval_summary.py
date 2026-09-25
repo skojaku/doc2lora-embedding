@@ -35,10 +35,15 @@ HERE = Path(__file__).resolve().parent
 from bench_data import out_dir   # bench_data.py sits next to this file
 DATA = out_dir("labels")           # where this chain writes
 
-METHODS = ["doc2lora", "incontext", "icae", "keyllm", "vec2text"]
+METHODS = ["doc2lora", "incontext", "icae", "keyllm", "vec2text",
+           "bertopic", "bertopic3", "bertopic_kbi", "bertopic_kbi3"]
 LABEL = {"doc2lora": "Doc2LoRA", "incontext": "in-context (same Qwen, text)",
          "icae": "ICAE (raw decode)", "keyllm": "KeyLLM (raw keywords)",
-         "vec2text": "vec2text (raw inversion)"}
+         "vec2text": "vec2text (raw inversion)",
+         "bertopic": "BERTopic (c-TF-IDF, top 10)",
+         "bertopic3": "BERTopic (c-TF-IDF, top 3)",
+         "bertopic_kbi": "BERTopic + KeyBERTInspired (top 10)",
+         "bertopic_kbi3": "BERTopic + KeyBERTInspired (top 3)"}
 N_BOOT = 1000
 
 
@@ -88,7 +93,10 @@ def main():
              "(4 fields, 8 divisions, 16 subdivisions)")
     L.append("- Every method is scored on its NATIVE output; no naming LLM. "
              "Doc2LoRA, ICAE and the in-context baseline answer the same "
-             "FIELD23_PROMPT; KeyLLM and vec2text take no instruction.")
+             "FIELD23_PROMPT; KeyLLM, vec2text and BERTopic take no "
+             "instruction. BERTopic runs in manual mode -- the PACS node is "
+             "handed to it as the cluster -- so only its representation step "
+             "(c-TF-IDF keywords, optionally KeyBERTInspired) is under test.")
     L.append("- **Ground-truth control (true PACS label vs. itself): 1.000** "
              "(ceiling check that the metric recognises a correct label)")
     L.append("- ± = bootstrap sd of the mean over the 28 nodes (1,000 resamples)\n")

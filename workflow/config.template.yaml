@@ -95,6 +95,13 @@ field_compat_level: ["sub"]
 field_compat_topk: [150]
 field_compat_min_papers: 1
 
+# ── The citation sample the reported transform was trained on ────────────
+# 42,332 tuples over 167,111 papers. A later data-scaling run overwrote the
+# unsuffixed file with a different draw, so the reported one is carried by name and
+# ships in the `results` artifact tier. Its text pool is rebuilt from these ids.
+ga_triplets: "data/general_adapter/triplets_1x.parquet"
+ga_sample: "_1x"               # "" re-draws instead of reproducing
+
 # ── Scientific-text baselines ────────────────────────────────────────────
 baseline_methods: ["specter2", "instructor", "embeddinggemma", "gte"]
 baseline_fields: ["economics", "psychology"]
@@ -167,8 +174,8 @@ eff_n_query: 2000
 # ── Temporal hardening / decontamination (App. datasets, #72) ────────────
 bench_root: "data/bench"       # benchmark-subset embeddings (the #63 slicer)
 gcb_fields: ["aps", "economics", "psychology"]
-gcb_new_encoders: ["embeddinggemma"]
-gcb_transform_methods: ["gene", "sbert", "specter2", "instructor", "embeddinggemma"]
+gcb_new_encoders: ["bge", "gte", "embeddinggemma"]
+gcb_transform_methods: ["gene", "sbert", "specter2", "instructor", "embeddinggemma", "bge", "gte"]
 gcb_temporal_methods: ["gene", "sbert"]
 gcb_cutoff_year: 2018          # g_theta trained only on pre-cutoff citations
 gcb_topic_split_year: 2016     # topic classification train<=2016 / test>2016

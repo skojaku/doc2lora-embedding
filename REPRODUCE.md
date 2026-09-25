@@ -15,26 +15,60 @@ Status legend:
 
 | Asset | Producer | Status |
 |---|---|---|
-| `similarity_benchmarks.tex` (Tab. similarity, Sec. results) | `uncertainty.smk:tab_similarity_benchmarks` → `workflow/plot/tab_similarity_benchmarks.py` | ✅ |
+| `similarity_benchmarks.tex` (Tab. similarity, Sec. results) | `uncertainty.smk:tab_similarity_benchmarks` | ✅ |
 | `encoder_matrix.tex` (Tab. per-encoder, App. tables) | same rule (third output) | ✅ |
-| `pacs-clustering.pdf` (Fig. cluster-labels, Sec. results) | `fig2_pacs_clustering.smk:fig2_pacs_clustering` → `workflow/plot/fig_pacs_clustering.py` | ✅ |
-| `mixing_decode.tex` (Tab. mixing-decode, Sec. results) | `fig2_pacs_clustering.smk:fig2_mixing_table` → `workflow/scripts/fig2_mixing_table.py` | ✅ |
-| `hierarchy_rows.tex` (Tab. hierarchy-labels, App. tables) | `baseline_trees.smk:bt_hierarchy_rows` → `workflow/scripts/make_hierarchy_rows.py` | ✅ |
+| `pacs-clustering.pdf` (Fig. cluster-labels, Sec. results) | `fig2_pacs_clustering.smk:fig2_pacs_clustering` | ✅ |
+| `mixing_decode.tex` (Tab. mixing-decode, Sec. results) | `fig2_pacs_clustering.smk:fig2_mixing_table` | ✅ |
+| `hierarchy_rows.tex` (Tab. hierarchy-labels, App. tables) | `baseline_trees.smk:bt_hierarchy_rows` | ✅ |
 | `prompt_sensitivity.tex` (Tab. prompt-sensitivity, App.) | `groupc_psens.smk:psens_score` | ✅ |
-| `psens_edge_curves.pdf` (Fig. psens-edge, App.) | `simplex_kwgrid.smk:kg_psens_score` → `workflow/scripts/psens_edge_score.py` | ✅ |
+| `psens_edge_curves.pdf` (Fig. psens-edge, App.) | `simplex_kwgrid.smk:kg_psens_score` | ✅ |
 | `incoherent_control.tex` (Tab. incoherent-control, App. cluster labels) | `groupc_incoherent.smk:incoh_score` | ✅ |
+| `symmetric_raw_scores.tex` (Tab. symmetric-raw, App. symmetric-adapter) | `groupc_s2and.smk:symmetric_raw_table` | ✅ |
+| `symmetric_adapter_summary.tex` (App. symmetric-adapter) | `groupc_s2and.smk:gcb_headtohead_table` | ✅ |
+| `symmetric_adapter_gain.pdf` (Fig. symmetric-gain, App.) | `groupc_s2and.smk:fig_symmetric_gain` | ✅ |
+| `collab_per_window.tex` (App. tables) | `groupc_s2and.smk:collab_per_window` | ✅ |
 | Fig. method (Sec. intro) | hand-drawn | ✋ |
 
-Three rules write a fourth artifact the paper does not `\input`:
-`similarity_benchmarks.pdf` (the same scores as a dot plot),
-`similarity_task_transform.tex` (Tab. similarity with the task-specific transform
-column), and `prompt_sensitivity_edge.tex` (the edge-prompt numbers the appendix
-states in prose). They stay because they are rule outputs and a rebuild can be diffed
-against them.
+That is every `\input` and `\includegraphics` in the merged `paper/iclr2026`, and
+`paper_assets` builds all twelve. Three rules write a further artifact the paper does
+not read — `similarity_benchmarks.pdf`, `similarity_task_transform.tex`,
+`symmetric_adapter_values.tex` — kept because they are rule outputs a rebuild can be
+diffed against.
 
-`paper_assets` depends on exactly the ✅ rows plus `data/aps/pooling_spearman.csv` (the
-Spearman ρ quoted in Sec. methods). Adding anything else to that target is a claim the
-paper reads it.
+### Baselines, and where each one is reproduced
+
+| Baseline | Chain | Reported in |
+|---|---|---|
+| SBERT / SPECTER2 / Instructor / EmbeddingGemma / GTE / BGE | `baselines.smk`, `s2and.smk`, `groupc_bench.smk:gcb_embed` | Tab. similarity, App. symmetric-adapter |
+| `ICAE` | `icae.smk` (slots + its own transform) | App. symmetric-adapter, cluster labels, fusion edge, length-dial |
+| `T2L` | `t2l.smk` | cluster labels, fusion edge |
+| `vec2text` | `baseline_trees.smk:bt_vec2text`, `abstraction_walk.smk:aw_vec2text` | cluster labels, Tab. radial-vec2text |
+| `BERTopic` | `baseline_trees.smk:bt_bertopic*`, `bt_bertopic_judge` | App. BERTopic, Tab. label-eval |
+| `KeyLLM` / in-context | `baseline_trees.smk` | cluster labels |
+| `ActPatch` | `actpatch.smk` | App. actpatch |
+
+ICAE's retrieval-evaluation half is deliberately absent: no reported row is an ICAE
+retrieval score. What the paper reads from ICAE is its embeddings, through the
+symmetric-adapter control.
+
+### The citation sample the reported transform was trained on
+
+`triplets_1x.parquet` is the one artifact the workflow cannot derive. A later
+data-scaling run overwrote the unsuffixed `triplets.parquet` with a different draw --
+not a superset; 29 of the reported 42,332 tuples survive in it -- so the reported
+sample is carried by name, ships in the `results` tier (1.3 MB, ids only), and is
+pointed at by `workflow/config.yaml:ga_triplets`.
+
+Its 167,111-paper text pool is NOT shipped and does not need to be: `sample_edges.py`
+writes exactly the papers the triplets name, so `ga_pool_text` rebuilds
+`pool_text_1x.parquet` from the ids and the OpenAlex tables. Everything downstream --
+`g_theta`, the ICAE transform, every arm of the symmetric control -- then trains on the
+sample the paper reports.
+
+The adapters are named for that sample (`adapter_general_qwen_1x.pt`) because the bare
+name is a trap: on the machine that produced the paper `adapter_general_qwen.pt` is
+byte-identical to the 2x adapter, and applying it reproduces the published vectors at
+cosine .005 instead of 1.0.
 
 ## Testing the workflow without the corpora
 
@@ -298,7 +332,7 @@ so in their own docstrings, so they cannot be mistaken for pipeline steps.
 
 ## What was left out, and why
 
-This repository carries 22 rule files. The chains that are absent produced results
+This repository carries 24 rule files. The chains that are absent produced results
 that never reached the manuscript: simplex fusion and the fusability sweeps,
 topological (TDA) hole-finding, the idea-gene GA, cross-domain analogy, arXiv field
 splits, interpolation demos, and the multi-agent holes study.
@@ -309,21 +343,24 @@ From nothing but the corpora and checkpoints (`snakemake -n <target>`):
 
 | Target | Jobs | Heaviest step |
 |---|---|---|
-| `paper_assets` | 200 | 3 × 644k-paper gene extraction (GPU-days) |
+| `paper_assets` | 329 | 3 × 644k-paper gene extraction (GPU-days) |
+| `groupc_s2and` | 190 | the symmetric control over all 14 benchmarks |
 | `uncertainty` | 133 | 1000× bootstrap over every paired score pool |
 | `general` | 115 | the general adapter + applying it everywhere |
+| `temporal_hardening` | 78 | retraining the transform on pre-2018 citations |
 | `s2and` | 62 | gene extraction for five disambiguation corpora |
-| `temporal_hardening` | 52 | retraining the transform on pre-2018 citations |
 | `kron` | 43 | per-field citation adapters |
-| `figure2` | 39 | the pair-axis edge decodes behind panels (e), (f) |
-| `label_eval` | 18 | LLM judge panel (OpenRouter, costs money) |
+| `figure2` | 41 | the pair-axis edge decodes behind panels (e), (f) |
+| `label_eval` | 21 | LLM judge panel (OpenRouter, costs money) |
+| `icae_embeddings` | 15 | ICAE slots for every benchmark subset |
 | `actpatch_judged` | 13 | 500 decodes per arm, then the judge panel |
 | `pair_axis` | 13 | 250 pairs × 13 points × 2 decoders |
 | `fields` | 11 | economics + psychology corpora and genes |
+| `bench_subsets` | 11 | slicing every embedding to the touched ids |
 | `t2l` | 9 | the hypernetwork baseline's label and fusion arms |
 | `sample_check_judged` | 7 | nothing: 20 seconds on a CPU |
-| `baselines_aps` | 5 | SPECTER2 + INSTRUCTOR + GTE over 644k APS abstracts |
 | `pacs_groups` | 5 | the PACS node set |
+| `abstraction_walk_all` | 4 | the ICAE / vec2text magnitude sweeps |
 | `recipe_fusion` | 3 | one Mistral-7B decode of two recipes |
 
 Every one of these was checked with `snakemake -n` against an **empty** `data/`

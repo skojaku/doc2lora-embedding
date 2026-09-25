@@ -6,6 +6,7 @@ Usage: CUDA_VISIBLE_DEVICES=0 python train_general.py gemma
 Output: data/general_adapter/adapter_general_<enc>.pt
 """
 import sys, os, time
+import os
 import numpy as np
 import pandas as pd
 import torch
@@ -16,12 +17,15 @@ from kron import KronAdapter
 
 ENC = sys.argv[1] if len(sys.argv) > 1 else "gemma"
 OUT = "data/general_adapter"
+# The rule names both, because the bare adapter name is a trap (see general_adapter.smk).
+TRIPLETS = os.environ.get("TRIPLETS", f"{OUT}/triplets.parquet")
+ADAPTER_OUT = os.environ.get("ADAPTER_OUT")
 STEPS = int(os.environ.get("STEPS", "8000"))
 BETA = float(os.environ.get("BETA", "0"))     # no regularization for the general adapter (broad data + hard negs)
 TAU = 0.05
 dev = "cuda"
 
-T = pd.read_parquet(f"{OUT}/triplets.parquet")
+T = pd.read_parquet(TRIPLETS)
 z = np.load(f"{OUT}/pool_genes_{ENC}.npz", allow_pickle=True)
 gk = {int(k): i for i, k in enumerate(z["pids"])}
 G = z["embeddings"]; D = G.shape[1]; L = D // 512
@@ -59,5 +63,6 @@ for step in range(STEPS):
     if step % 500 == 0 or step == STEPS - 1:
         print(f"  step {step:5d} ema {ema:.4f} [{time.time()-t0:.0f}s]", flush=True)
 
-torch.save({"state": model.state_dict(), "L": L, "D": D}, f"{OUT}/adapter_general_{ENC}.pt")
-print(f"[saved] {OUT}/adapter_general_{ENC}.pt ({time.time()-t0:.0f}s)", flush=True)
+_out = ADAPTER_OUT or f"{OUT}/adapter_general_{ENC}.pt"
+torch.save({"state": model.state_dict(), "L": L, "D": D}, _out)
+print(f"[saved] {_out} ({time.time()-t0:.0f}s)", flush=True)

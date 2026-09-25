@@ -1,4 +1,4 @@
-"""Metric 4 -- pairwise, reference-based label comparison (2026-09-18).
+"""Metric 4 -- pairwise, reference-based label comparison (@skojaku, 2026-09-18).
 
 REUSABLE PIECES. Import these rather than copying them, so a second experiment
 using this design cannot drift from the one the paper reports:
@@ -58,8 +58,12 @@ HERE = Path(__file__).resolve().parent
 from bench_data import out_dir   # bench_data.py sits next to this file
 DATA = out_dir("labels")           # where this chain writes
 
-METHODS = ["doc2lora", "icae", "keyllm", "vec2text", "incontext",
-           "t2l_gte", "t2l_hidden", "t2l_dw"]   # T2L arms, #151
+# T2L enters through its TaskEncoder space only (the one Fig. 2 and the fusion
+# comparison use); its GTE and LoRA-factor spaces decode the same few unrelated
+# strings (#151). BERTopic (top 10) joined 2026-09-23 (PR #163); every pair was
+# already in the judge cache from bertopic_judge.py, so this cost no calls.
+METHODS = ["doc2lora", "icae", "keyllm", "bertopic", "vec2text", "incontext",
+           "t2l_hidden"]
 GT = "_gt"
 N_BOOT = 1000
 

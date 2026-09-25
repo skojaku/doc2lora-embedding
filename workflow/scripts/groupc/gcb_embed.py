@@ -25,9 +25,16 @@ def main() -> None:
     p.add_argument("--out", required=True)
     p.add_argument("--batch-size", type=int, default=128)
     p.add_argument("--chunk-size", type=int, default=20000)
+    p.add_argument("--shard", default="", help="i/n: embed only shard i of n (contiguous split). "
+                                               "Shards are merged by whoever consumes them; ids are kept.")
     a = p.parse_args()
 
     df = pd.read_parquet(a.input)
+    if a.shard:
+        i, n = (int(x) for x in a.shard.split("/"))
+        bounds = np.linspace(0, len(df), n + 1).astype(int)
+        df = df.iloc[bounds[i]:bounds[i + 1]].reset_index(drop=True)
+        print(f"[gcb-embed] shard {i}/{n}: rows {bounds[i]:,}-{bounds[i + 1]:,}", flush=True)
     idc = "paper_id" if "paper_id" in df.columns else "pid"
     ids = df[idc].astype(np.int64).values
     texts = df.text.astype(str).tolist()
