@@ -14,7 +14,7 @@
 #       + the T2L arm, same grid   <- fig2_t2l_edge_metrics (SBERT on CPU over the T2L
 #                                     edge decodes of t2l.smk:t2l_fusion, #151)
 #   Tab. mixing-decode (workflow/scripts/fig2_mixing_table.py)
-#       one pair decoded at 25/50/75 %: the decoded abstracts' openings from the
+#       one pair decoded at 3/12, 5/12, 9/12 of the way to paper B: the decoded abstracts' openings from the
 #       tracked pairCSML_00 decodes, t from fig2_colorband_metrics (SBERT on CPU)
 #
 # CPU only. Every input is a small cache that is tracked in git (see the

@@ -28,7 +28,12 @@ import re
 import sys
 
 METHODS = [("doc2lora", r"\doctolora"), ("icae", r"\texttt{ICAE}"), ("incontext", "in-context")]
-FRACS = [0.25, 0.5, 0.75]
+# Weight on paper B, as steps of the 12-step grid. The middle column is 5/12 (~42 %),
+# not 1/2: on pairCSML_00 the Doc2LoRA decode switches from paper A to paper B
+# between 5/12 and 6/12, and 5/12 is the one grid point where both papers' terms
+# appear. At 1/2 the decode is already all paper B.
+GRID = 12                        # steps of the interpolation grid; columns are labelled k/GRID
+FRACS = [3 / 12, 5 / 12, 9 / 12]
 MIN_WORDS, MAX_WORDS = 30, 42     # keep whole sentences past MIN_WORDS; hard cut at MAX_WORDS
 
 # source terms, longest first so "statistical mechanics of learning" wins over its prefix;
@@ -39,7 +44,7 @@ TERMS = {
                r"learning curves?", r"replica(?:-based)?(?: method)?", r"perceptrons?",
                r"Gibbs", r"spin-glass", r"training (?:set|samples|data)"],
     "paperB": [r"quantum error[- ]correct(?:ing|ion)(?: codes?)?", r"QECCs?", r"QEC",
-               r"error-correcting codes?", r"qubits?", r"quantum computing",
+               r"error-correcting codes?", r"qubits?", r"quantum comput(?:ing|ation)",
                r"quantum information", r"decoherence", r"quantum noise"],
 }
 COLORS = {"paperA": "2A78D6", "paperB": "EB6834"}
@@ -110,7 +115,7 @@ def main(band, decodes, icae, out):
         r"\toprule",
         r"& \multicolumn{3}{c}{Ideal mixing weight on paper B} \\",
         r"\cmidrule(lr){2-4}",
-        "Method & " + " & ".join(f"${int(f * 100)}\\,\\%$" for f in FRACS) + r" \\",
+        "Method & " + " & ".join(f"${round(f * GRID)}/{GRID}$" for f in FRACS) + r" \\",
         r"\midrule",
     ]
     for key, name in METHODS:
