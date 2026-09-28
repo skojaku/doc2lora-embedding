@@ -22,7 +22,7 @@ Status legend:
 | `hierarchy_rows.tex` (Tab. hierarchy-labels, App. tables) | `baseline_trees.smk:bt_hierarchy_rows` | ✅ |
 | `prompt_sensitivity.tex` (Tab. prompt-sensitivity, App.) | `groupc_psens.smk:psens_score` | ✅ |
 | `psens_edge_curves.pdf` (Fig. psens-edge, App.) | `simplex_kwgrid.smk:kg_psens_score` | ✅ |
-| `incoherent_control.tex` (Tab. incoherent-control, App. cluster labels) | `groupc_incoherent.smk:incoh_score` | ✅ |
+| `incoherent_control.tex` (Tab. incoherent-control, App. cluster labels) | `groupc_incoherent.smk:incoh_report` (scores from `incoh_score`) | ✅ |
 | `symmetric_raw_scores.tex` (Tab. symmetric-raw, App. symmetric-adapter) | `groupc_s2and.smk:symmetric_raw_table` | ✅ |
 | `symmetric_adapter_summary.tex` (App. symmetric-adapter) | `groupc_s2and.smk:gcb_headtohead_table` | ✅ |
 | `symmetric_adapter_gain.pdf` (Fig. symmetric-gain, App.) | `groupc_s2and.smk:fig_symmetric_gain` | ✅ |
@@ -101,7 +101,7 @@ never spends OpenRouter budget; after a fresh judge run, re-plot with
 
 Snakemake links rules by path, so asking for the figure through the workflow
 schedules the producer of every summary it declares — on a clean tree that is the
-whole GPU chain. Once the summaries exist, redraw without the workflow by calling
+whole GPU chain; with the `results` tier unpacked, only the CPU drawing rules. Once the summaries exist, redraw without the workflow by calling
 the two scripts directly:
 
 ```bash
@@ -118,10 +118,11 @@ adapters, and benchmark vectors that a GPU produced once. They are published as 
 Zenodo record and fetched by one command:
 
 ```bash
-python scripts/fetch_artifacts.py results          # ~192 MB, 219 files
+python scripts/fetch_artifacts.py results          # ~224 MB, 1227 files
 python scripts/fetch_artifacts.py results s2and    # + ~12.3 GB, 50 files
 python scripts/fetch_artifacts.py --verify         # re-check what is already on disk
 python scripts/fetch_artifacts.py --record <ID> results   # pin a record
+python scripts/fetch_artifacts.py --from ~/Downloads results   # a tarball you already downloaded
 ```
 
 The script resolves the record, downloads the tarball for each tier you name, unpacks
@@ -131,7 +132,7 @@ archived file, and that is where it lands.
 
 | Tier | Size | What it holds | What it unlocks |
 |---|---|---|---|
-| `results` | ~192 MB | per-unit score pools, the bootstrap replicates, the trained adapters, the PACS node set, the label decodes and judge verdicts, the published tables | `snakemake paper_assets` on a CPU |
+| `results` | ~224 MB | everything `paper_assets` reads that a GPU, the licensed APS text, or the judge panel produced: per-unit score pools, the trained adapters, every method's raw cluster labels and the judge verdicts, the pair-axis decodes (Doc2LoRA and ICAE, all strata and paraphrases), the paraphrase decodes, the incoherent-control scores, the PACS node set, and the paper's own tables for comparison | `snakemake paper_assets --rerun-triggers mtime` on a CPU: 29 jobs, all table/figure rules |
 | `s2and` | ~12.3 GB | the disambiguation corpora's vectors, per encoder | `snakemake s2and uncertainty` — re-score from vectors |
 | `aps` | ~137 GB | the 644k-paper gene matrices | **not distributed**: `snakemake all_embeddings` |
 
@@ -145,13 +146,14 @@ data/s2and/proc/<dataset>/   disambiguation vectors (the s2and tier)
 data/labels/                 node labels, decodes, judge verdicts, fullrank means
 data/pacs/results/           the PACS node set every labelling table is built on
 data/groupc/                 the appendix controls
-results/figs/                the published tables, so a rebuild can be diffed
+data/pair_axis/  data/t2l/   the pair-axis decodes and their landing-position / copy-rate caches
+data/reference/              the paper's own tables; the rebuild lands in results/figs, diff the two
 ```
 
 The `aps` tier is left out on purpose: it exceeds a Zenodo record and is a
 deterministic function of the corpus plus the published checkpoints.
 
-**Layout note.** The bundles were packed when each chain kept its outputs next to its
+**Layout note.** The first published bundles were packed when each chain kept its outputs next to its
 own code, under a dated `exps/` directory. This workflow separates the two, so
 `fetch_artifacts.py` rewrites each member onto the current layout as it unpacks
 (`LEGACY_LAYOUT` in that file). An archived
@@ -163,8 +165,20 @@ directly, so a bundle rebuilt from a completed run needs no rewriting.
 Having unpacked a tier, confirm the workflow agrees that it is satisfied:
 
 ```bash
-snakemake -n paper_assets --rerun-triggers mtime    # should collapse to the table rules
+snakemake -n paper_assets --rerun-triggers mtime    # 29 jobs, every one a CPU table/figure rule
+snakemake paper_assets -j4 --rerun-triggers mtime
+for f in data/reference/*.tex; do diff -q $f results/figs/$(basename $f); done
 ```
+
+The tier is cut so that nothing upstream of it is scheduled: every file it holds is
+the output of a GPU decode or extraction, of a step that reads the licensed APS text,
+or of the judge panel, and the CPU rules that turn those files into the paper's
+tables and figures are left to run. The archive stamps every member with one
+timestamp, so no unpacked input is newer than an unpacked output; and the code inputs
+of the GPU rules are `ancient()`, so a fresh clone's newer scripts do not re-trigger
+a decode. `length_dial.pdf` is the one rule output this path does not rebuild: it
+needs the 644k-paper Qwen gene matrix, and the paper no longer includes it, so it
+is outside `paper_assets` (its CSV, which Fig. cluster-labels reads, ships).
 
 ## Numbers typed into the text
 
@@ -343,7 +357,7 @@ From nothing but the corpora and checkpoints (`snakemake -n <target>`):
 
 | Target | Jobs | Heaviest step |
 |---|---|---|
-| `paper_assets` | 329 | 3 × 644k-paper gene extraction (GPU-days) |
+| `paper_assets` | 330 | 3 × 644k-paper gene extraction (GPU-days) |
 | `groupc_s2and` | 190 | the symmetric control over all 14 benchmarks |
 | `uncertainty` | 133 | 1000× bootstrap over every paired score pool |
 | `general` | 115 | the general adapter + applying it everywhere |
@@ -368,8 +382,9 @@ directory, so the counts are true cold-start figures: the only inputs assumed to
 exist are the licensed corpora and the checkpoints named in
 `workflow/config.yaml`.
 
-With the `results` artifact bundle unpacked, the table-building tail of
-`paper_assets` runs on a CPU in minutes.
+With the `results` artifact bundle unpacked, `paper_assets` collapses to its
+29 CPU table/figure jobs; with `-j4` they take about 1.5 hours, most of it
+the two single-threaded bootstraps (`unc_bootstrap`, `gcb_bootstrap`).
 
 Note that Snakemake's default trigger set includes `params`, `input` and `code`, so a
 clone with no `.snakemake` provenance can schedule more than is strictly out of date.
