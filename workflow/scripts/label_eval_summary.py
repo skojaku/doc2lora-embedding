@@ -116,7 +116,7 @@ def main():
     (DATA / "label_eval_summary.md").write_text("\n".join(L) + "\n")
 
     print("\n".join(L))
-    print(f"\nwrote {HERE / 'label_eval_summary.json'} + .md")
+    print(f"\nwrote {DATA / 'label_eval_summary.json'} + .md")
 
 
 if __name__ == "__main__":

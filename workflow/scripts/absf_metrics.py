@@ -14,7 +14,7 @@ import os, sys, json, re, ast
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import simplex_common as sc
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "workflow", "plot"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "plot"))   # workflow/plot
 import _simplex as S
 from _style import setup_style
 import matplotlib
