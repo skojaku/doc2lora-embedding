@@ -142,7 +142,9 @@ def unpack(tar_path: Path) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("tiers", nargs="*", choices=TIERS, help="which bundles to fetch")
+    # No `choices=` here: with nargs="*" argparse checks the empty default against them
+    # and rejects a bare `--verify`. Checked by hand below instead.
+    ap.add_argument("tiers", nargs="*", help=f"which bundles to fetch: {', '.join(TIERS)}")
     ap.add_argument("--record", default=ZENODO_RECORD, help="Zenodo record id (numeric)")
     ap.add_argument("--verify", action="store_true", help="only verify what is already unpacked")
     ap.add_argument("--keep-tar", action="store_true", help="do not delete the tarball after unpacking")
@@ -150,6 +152,9 @@ def main() -> int:
                     help="unpack doc2lora-<tier>.tar.zst from this directory instead of downloading")
     args = ap.parse_args()
 
+    bad_tiers = [t for t in args.tiers if t not in TIERS]
+    if bad_tiers:
+        ap.error(f"unknown tier(s) {', '.join(bad_tiers)}; choose from {', '.join(TIERS)}")
     manifest = load_manifest()
 
     if args.verify:
