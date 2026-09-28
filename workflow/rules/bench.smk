@@ -18,7 +18,7 @@ BENCH_S2AND = ["zbmath", "qian", "arnetminer", "pubmed", "kisti"]
 BENCH_FIELD_ENC = {"economics": ["gemma", "qwen", "mistral"], "psychology": ["gemma", "qwen", "mistral"],
                    "aps": ["gemma", "qwen", "mistral"], "arxiv_cs": ["gemma", "qwen"],
                    "arxiv_math": ["gemma", "qwen"]}
-IC_ENV = (f"set -a; source .env 2>/dev/null; set +a; "
+IC_ENV = (f"set -a; source .env 2>/dev/null || true; set +a; "
           f"export HF_HOME={os.path.abspath('data/agent_assets/hf_cache')} "
           f"PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True;")
 GPU = f"bash {SCRIPTS}/gpu_run.sh"

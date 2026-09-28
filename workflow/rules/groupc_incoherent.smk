@@ -40,7 +40,7 @@ INC_FIG = j(FIGS_DIR, "incoherent_control.pdf")
 # Shared preamble for the Doc2LoRA GPU scripts: HF token, the ctx_to_lora source tree (the editable
 # install's .pth is stale), and the Qwen3-4B hypernetwork checkpoint.
 D2L_ENV = (
-    "set -a; source .env 2>/dev/null; set +a; "
+    "set -a; source .env 2>/dev/null || true; set +a; "
     f"export DOC_TO_LORA_SRC={config.get('doc_to_lora_src', 'doc-to-lora/src')} "
     f"PYTHONPATH={config.get('doc_to_lora_src', 'doc-to-lora/src')} "
     f"HF_HOME={config.get('hf_home', 'data/agent_assets/hf_cache')} "

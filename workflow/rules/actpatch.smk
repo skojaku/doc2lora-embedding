@@ -33,7 +33,7 @@ from os.path import join as j
 ACT = "data/actpatch"
 ACT_RES = j(ACT, "results")
 ACT_ARMS = ["gene", "act"]
-ACT_ENV = ("set -a; source .env 2>/dev/null; set +a; "
+ACT_ENV = ("set -a; source .env 2>/dev/null || true; set +a; "
            f"export HF_HOME={config.get('hf_home', 'data/agent_assets/hf_cache')} "
            "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True; ")
 
@@ -135,7 +135,7 @@ rule act_node_names:
     output:
         j(ACT_RES, "arith_m1.json"),
     shell:
-        "set -a; source .env 2>/dev/null; set +a; "
+        "set -a; source .env 2>/dev/null || true; set +a; "
         f"python {SCRIPTS}/arith_name.py --out {{output}}"
 
 
@@ -148,7 +148,7 @@ rule act_node_judge:
     wildcard_constraints:
         metric="m3|m4",
     shell:
-        "set -a; source .env 2>/dev/null; set +a; "
+        "set -a; source .env 2>/dev/null || true; set +a; "
         f"python {SCRIPTS}/arith_{{wildcards.metric}}.py --out {{output}}"
 
 

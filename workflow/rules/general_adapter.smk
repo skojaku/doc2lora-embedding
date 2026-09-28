@@ -16,7 +16,7 @@ GA_OAX_FIELD = {"economics": ["gemma", "qwen", "mistral"], "psychology": ["gemma
 GA_APS_ENC = ["gemma", "qwen", "mistral"]
 GA_S2AND = config.get("ga_s2and", ["zbmath", "qian", "arnetminer", "pubmed", "kisti"])
 
-GA_ENV = (f"set -a; source .env 2>/dev/null; set +a; "
+GA_ENV = (f"set -a; source .env 2>/dev/null || true; set +a; "
           f"export HF_HOME={os.path.abspath('data/agent_assets/hf_cache')} "
           f"PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True;")
 GPU = f"bash {SCRIPTS}/gpu_run.sh"

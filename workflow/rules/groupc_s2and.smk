@@ -48,7 +48,7 @@ rule gcb_pool_embed_specter1:
         gpu=1,
         mem_gb=30,
     shell:
-        "set -a; source .env 2>/dev/null; set +a; "
+        "set -a; source .env 2>/dev/null || true; set +a; "
         "NEED_MB=20000 bash workflow/scripts/gpu_lease.sh "
         "python workflow/scripts/groupc/gcb_embed.py --input {input.pool} "
         "--method specter1 --out {output.npz} --batch-size 128"
