@@ -40,6 +40,12 @@ FIG2_PDF = j(config.get("figs_dir", "figs"), "pacs-clustering.pdf")
 FIG2_TABLE = j(config.get("figs_dir", "figs"), "mixing_decode.tex")
 
 
+# Code inputs of the rules that decode, extract, or call a model are ancient(): a fresh clone
+# checks every script out newer than the archived outputs (the `results` tier), and an mtime
+# trigger on the script would otherwise re-run a GPU job whose result already ships. After
+# editing such a script, rerun its rule with -R <rule>. Table and figure rules keep plain
+# script inputs.
+
 # SBERT projection + copy rate per decoded cell, and the corner papers'
 # titles/DOIs. all-mpnet-base-v2 on CPU. The corner spec carries the paper ids
 # and DOIs; the two optional params are fallbacks for a spec without them, read
@@ -53,8 +59,8 @@ FIG2_TABLE = j(config.get("figs_dir", "figs"), "mixing_decode.tex")
 rule fig2_decode_curated:
     input:
         corners = ancient(j(SCRIPTS, f"corners_{FIG2_PAIR_SET}.json")),
-        script = j(SCRIPTS, "decode_absfollow.py"),
-        prompts = j(SCRIPTS, "psens_prompts.py"),
+        script = ancient(j(SCRIPTS, "decode_absfollow.py")),
+        prompts = ancient(j(SCRIPTS, "psens_prompts.py")),
     output:
         FIG2_DECODES,
     resources:
@@ -67,8 +73,8 @@ rule fig2_decode_curated:
 rule fig2_decode_curated_icae:
     input:
         corners = ancient(j(SCRIPTS, f"corners_{FIG2_PAIR_SET}.json")),
-        script = j(SCRIPTS, "decode_absfollow_icae.py"),
-        prompts = j(SCRIPTS, "psens_prompts.py"),
+        script = ancient(j(SCRIPTS, "decode_absfollow_icae.py")),
+        prompts = ancient(j(SCRIPTS, "psens_prompts.py")),
     output:
         FIG2_DECODES_ICAE,
     resources:

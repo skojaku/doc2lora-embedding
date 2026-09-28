@@ -22,9 +22,9 @@
 #   - Tab. fields9-labels    -> typed inline in main.tex (no \input)
 # The pacs_labels_*.tex SI tables are auto-generated here but not \input by the
 # current draft. Assembling hierarchy_rows.tex / the fields9 rows in paper format
-# is tracked separately (issue #15). The length-dial figure (Fig. length-dial) is
-# built by bt_length_dial, which also emits length_vs_breadth.csv (read by
-# make_pacs_label_tables).
+# is tracked separately (issue #15). bt_length_dial emits length_vs_breadth.csv (read
+# by make_pacs_label_tables and Fig. cluster-labels) and the length-dial figure, which
+# the current draft no longer includes.
 #
 # External deps: full-rank means/decode/vec2text need a GPU + qwen checkpoint
 # (set baseline_trees_gpu in config); KeyLLM-from-keywords needs an ollama server
@@ -91,13 +91,19 @@ BT_RADIUS_CSV = j(BT_DIR, "length_vs_breadth.csv")
 BT_LENGTH_DIAL = j(BT_FIGS_DIR, "length_dial.pdf")
 
 
+# Code inputs of the rules that decode, extract, or call a model are ancient(): a fresh clone
+# checks every script out newer than the archived outputs (the `results` tier), and an mtime
+# trigger on the script would otherwise re-run a GPU job whose result already ships. After
+# editing such a script, rerun its rule with -R <rule>. Table and figure rules keep plain
+# script inputs.
+
 rule bt_prep_nodes:
     input:
         paper_groups = BT_PAPER_GROUPS,
         groups = BT_GROUPS,
         paper_text = BT_PAPER_TEXT_PID,
         sbert = BT_SBERT,
-        script = j(SCRIPTS, "prep_nodes.py"),
+        script = ancient(j(SCRIPTS, "prep_nodes.py")),
     output:
         nodes = BT_NODES,
     shell:
@@ -113,7 +119,7 @@ rule bt_fullrank_means:
         paper_groups = BT_PAPER_GROUPS,
         paper_text = BT_PAPER_TEXT,
         ckpt = QWEN_CHECKPOINT_PATH,
-        script = j(SCRIPTS, "compute_qwen_fullrank_means.py"),
+        script = ancient(j(SCRIPTS, "compute_qwen_fullrank_means.py")),
     output:
         means = BT_MEANS,
     resources:
@@ -127,7 +133,7 @@ rule bt_decode_fullrank:
     input:
         means = BT_MEANS,
         ckpt = QWEN_CHECKPOINT_PATH,
-        script = j(SCRIPTS, "decode_fullrank_field23.py"),
+        script = ancient(j(SCRIPTS, "decode_fullrank_field23.py")),
     output:
         labels = BT_FULLRANK,
     resources:
@@ -143,7 +149,7 @@ rule bt_vec2text:
         paper_groups = BT_PAPER_GROUPS,
         paper_text = BT_PAPER_TEXT_PID,
         sbert = BT_SBERT,
-        script = j(SCRIPTS, "decode_vec2text_nodes.py"),
+        script = ancient(j(SCRIPTS, "decode_vec2text_nodes.py")),
     output:
         labels = BT_VEC2TEXT,
     resources:
@@ -158,7 +164,7 @@ rule bt_vec2text:
 rule bt_keyllm_faithful:
     input:
         nodes = BT_NODES,
-        script = j(SCRIPTS, "keyllm_faithful.py"),
+        script = ancient(j(SCRIPTS, "keyllm_faithful.py")),
     output:
         keywords = j(BT_DIR, "keyllm_faithful_labels.json"),
     shell:
@@ -171,7 +177,7 @@ rule bt_keyllm_faithful:
 # checkpoint. CPU-only.
 rule bt_icae_raw:
     input:
-        script = j(SCRIPTS, "icae_raw_labels.py"),
+        script = ancient(j(SCRIPTS, "icae_raw_labels.py")),
     output:
         labels = BT_ICAE,
     shell:
@@ -181,7 +187,7 @@ rule bt_icae_raw:
 rule bt_incontext:
     input:
         nodes = BT_NODES,
-        script = j(SCRIPTS, "incontext_label_qwen.py"),
+        script = ancient(j(SCRIPTS, "incontext_label_qwen.py")),
     output:
         labels = BT_INCONTEXT,
     resources:
@@ -193,7 +199,7 @@ rule bt_incontext:
 # Isolated venv for BERTopic (numpy 2 / umap / hdbscan stack; see the script).
 rule bt_bertopic_venv:
     input:
-        script = "workflow/scripts/setup_bertopic_venv.sh",
+        script = ancient("workflow/scripts/setup_bertopic_venv.sh"),
     output:
         ready = touch(BT_BERTOPIC_VENV),
     shell:
@@ -211,7 +217,7 @@ rule bt_bertopic:
         paper_text = BT_PAPER_TEXT,
         sbert = BT_SBERT,
         venv = BT_BERTOPIC_VENV,
-        script = j(SCRIPTS, "bertopic_labels.py"),
+        script = ancient(j(SCRIPTS, "bertopic_labels.py")),
     output:
         labels = BT_BERTOPIC,
     params:
@@ -232,7 +238,7 @@ rule bt_bertopic_raw:
         paper_text = BT_PAPER_TEXT,
         sbert = BT_SBERT,
         venv = BT_BERTOPIC_VENV,
-        script = j(SCRIPTS, "bertopic_labels.py"),
+        script = ancient(j(SCRIPTS, "bertopic_labels.py")),
     output:
         labels = BT_BERTOPIC_RAW,
     params:
@@ -426,4 +432,7 @@ rule baseline_trees:
         BT_EVAL_SUMMARY,
         BT_PACS_MAIN,
         BT_PACS_SI,
-        BT_LENGTH_DIAL,
+        # The length-dial figure left the paper; its CSV did not (Fig. cluster-labels and
+        # the PACS label tables read it). Asking for the CSV, not the PDF, keeps the
+        # 644k-paper gene matrix bt_length_dial reads out of `paper_assets`.
+        BT_RADIUS_CSV,

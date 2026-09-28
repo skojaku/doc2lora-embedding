@@ -8,7 +8,8 @@
 #   incoh_build   -> clusters.json          matched-cardinality cross-PACS-chapter clusters (2 draws)
 #   incoh_means   -> means_{arm}_s{i}.npz   full-rank Doc2LoRA centroid per cluster, GPU-sharded
 #   incoh_decode  -> incoh_labels.json      same 2-3 word field prompt: real / control / norm-matched
-#   incoh_score   -> incoh_scores.json + figs/incoherent_control.{tex,pdf}
+#   incoh_score   -> incoh_scores.json + incoh_rows.parquet (SBERT + judge panel)
+#   incoh_report  -> figs/incoherent_control.{tex,pdf} (CPU, from the two files above)
 #
 # The real arm is re-extracted here (not read from data/labels) so both arms go
 # through one code path; the manuscript's own label artifacts are left untouched.
@@ -120,8 +121,6 @@ rule incoh_score:
     output:
         scores=INC_SCORES,
         rows=INC_ROWS,
-        table=INC_TABLE,
-        fig=INC_FIG,
     params:
         nodes_eval=j(BT, "label_eval_nodes.json"),   # frozen baseline_trees artifact (see incoh_build)
         n_titles=INC_TITLES,
@@ -134,6 +133,22 @@ rule incoh_score:
         mem_gb=30,
     script:
         "../scripts/groupc/incoh_score.py"
+
+
+# The table and the figure read only the scored rows, so they are a separate CPU step: from
+# the archived incoh_scores.json / incoh_rows.parquet they rebuild without SBERT, the APS
+# text, or a judge call.
+rule incoh_report:
+    input:
+        scores=INC_SCORES,
+        rows=INC_ROWS,
+    output:
+        table=INC_TABLE,
+        fig=INC_FIG,
+    params:
+        seed=INC_SEED,
+    script:
+        "../scripts/groupc/incoh_report.py"
 
 
 rule groupc_incoherent:
