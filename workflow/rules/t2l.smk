@@ -108,7 +108,9 @@ rule t2l_label_register:
 # hypernetwork adapters and §5's mechanism paragraph has to be rewritten -- which is why
 # this is worth running either way.
 rule t2l_fusion:
-    input: script=j(SCRIPTS, "t2l_fusion.py"), common=j(SCRIPTS, "t2l_common.py"),
+    # ancient(): a fresh clone checks the scripts out newer than the archived midpoints (the
+    # results tier), and this GPU job must not re-run over that alone. Force it with -R.
+    input: script=ancient(j(SCRIPTS, "t2l_fusion.py")), common=ancient(j(SCRIPTS, "t2l_common.py")),
            corners=expand("data/pair_axis/corners_pair{L}_{n}.json",
                           L=["L1", "L5"], n=[f"{i:02d}" for i in range(50)]),
     output: expand(j(T2L_RES, "midpoints_t2l_{sp}.json"), sp=T2L_FUSION_SPACES),

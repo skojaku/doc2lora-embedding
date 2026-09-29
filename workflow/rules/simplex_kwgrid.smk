@@ -69,10 +69,16 @@ wildcard_constraints:
 
 # ── The study ────────────────────────────────────────────────────────────────
 
+# Code inputs of the rules that decode, extract, or call a model are ancient(): a fresh clone
+# checks every script out newer than the archived outputs (the `results` tier), and an mtime
+# trigger on the script would otherwise re-run a GPU job whose result already ships. After
+# editing such a script, rerun its rule with -R <rule>. Table and figure rules keep plain
+# script inputs.
+
 # Corner-pair selection (CPU, ~2 min).
 rule kg_pairs:
     input:
-        script=j(SCRIPTS, "sample_far_pairs.py"),
+        script=ancient(j(SCRIPTS, "sample_far_pairs.py")),
     output:
         corners=expand(KG_CORNERS, L=KG_STRATA, n=KG_IDS),
         manifest=KG_MANIFEST,
@@ -86,7 +92,7 @@ rule kg_pairs:
 rule kg_decode_doc2lora:
     input:
         corners=expand(KG_CORNERS, n=KG_IDS, allow_missing=True),
-        script=j(SCRIPTS, "decode_absfollow.py"),
+        script=ancient(j(SCRIPTS, "decode_absfollow.py")),
     output:
         expand(KG_ABS, n=KG_IDS, allow_missing=True),
     params:
@@ -101,7 +107,7 @@ rule kg_decode_doc2lora:
 rule kg_decode_icae:
     input:
         corners=expand(KG_CORNERS, n=KG_IDS, allow_missing=True),
-        script=j(SCRIPTS, "decode_absfollow_icae.py"),
+        script=ancient(j(SCRIPTS, "decode_absfollow_icae.py")),
     output:
         expand(KG_ABS_ICAE, n=KG_IDS, allow_missing=True),
     params:
@@ -128,7 +134,7 @@ rule kg_metrics:
         base=expand(KG_ABS, L=KG_STRATA, n=KG_IDS),
         icae=expand(KG_ABS_ICAE, L=KG_STRATA, n=KG_IDS),
         manifest=KG_MANIFEST,
-        script=j(SCRIPTS, "pair_axis_metrics.py"),
+        script=ancient(j(SCRIPTS, "pair_axis_metrics.py")),
     output:
         metrics=KG_METRICS,
     resources:
@@ -150,7 +156,7 @@ rule kg_copyrate:
     input:
         base=expand(KG_ABS, L=KG_STRATA, n=KG_IDS),
         icae=expand(KG_ABS_ICAE, L=KG_STRATA, n=KG_IDS),
-        script=j(SCRIPTS, "pair_axis_copyrate.py"),
+        script=ancient(j(SCRIPTS, "pair_axis_copyrate.py")),
     output:
         cache=SKG_COPY_CACHE,
     resources:
@@ -194,8 +200,8 @@ wildcard_constraints:
 rule kg_psens_decode_doc2lora:
     input:
         corners=expand(KG_CORNERS, n=KG_PSENS_PAIRS, allow_missing=True),
-        script=j(SCRIPTS, "decode_absfollow.py"),
-        prompts=j(SCRIPTS, "psens_prompts.py"),
+        script=ancient(j(SCRIPTS, "decode_absfollow.py")),
+        prompts=ancient(j(SCRIPTS, "psens_prompts.py")),
     output:
         expand(KG_PSENS_ABS, n=KG_PSENS_PAIRS, allow_missing=True),
     params:
@@ -211,8 +217,8 @@ rule kg_psens_decode_doc2lora:
 rule kg_psens_decode_icae:
     input:
         corners=expand(KG_CORNERS, n=KG_PSENS_PAIRS, allow_missing=True),
-        script=j(SCRIPTS, "decode_absfollow_icae.py"),
-        prompts=j(SCRIPTS, "psens_prompts.py"),
+        script=ancient(j(SCRIPTS, "decode_absfollow_icae.py")),
+        prompts=ancient(j(SCRIPTS, "psens_prompts.py")),
     output:
         expand(KG_PSENS_ABS_ICAE, n=KG_PSENS_PAIRS, allow_missing=True),
     params:
@@ -239,10 +245,11 @@ rule kg_psens_score:
     params:
         n=KG_PSENS_N,
         ids=" ".join(KG_PSENS_IDS),
-    resources:
-        gpu=1,
+    # Scoring only: SBERT over the cached decodes, which runs on a CPU in minutes. No GPU
+    # lease, so the rule also runs on a box without nvidia-smi (the lease script would wait
+    # for one forever). The script uses CUDA only when CUDA_VISIBLE_DEVICES is set.
     shell:
-        KG_GPU + " python {input.script} --pairs {params.n} --prompts 0 {params.ids}"
+        "python {input.script} --pairs {params.n} --prompts 0 {params.ids}"
         " --json {output.js} --tex {output.tex} --fig {output.fig}"
 
 

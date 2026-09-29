@@ -93,7 +93,7 @@ def main():
     for m in METHODS:
         s = summary[m]
         print(f"  {m:10s} {s['fuzzy_mean']:8.3f} {s['jaccard_mean']:8.3f} {s['rouge_l_mean']:8.3f}")
-    print(f"\nwrote {HERE / 'label_eval_metric1.json'}")
+    print(f"\nwrote {DATA / 'label_eval_metric1.json'}")
 
 
 if __name__ == "__main__":

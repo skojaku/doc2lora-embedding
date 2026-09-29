@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import shutil
 import subprocess
 import sys
@@ -48,43 +49,60 @@ SRC = ROOT
 # reads the older bundles onto it. Order matters only for
 # readability; a file is assigned to the first tier that claims it.
 TIERS: dict[str, list[str]] = {
+    # Everything `snakemake paper_assets` reads but cannot make on a CPU: the outputs of
+    # the GPU decodes and extractions, of the steps that need the licensed APS text, and
+    # of the judge panel. The rules that turn these into the manuscript's tables and
+    # figures are NOT short-circuited: their outputs are excluded below (EXCLUDE), so an
+    # unpacked tier leaves exactly the CPU table/figure rules for Snakemake to run.
     "results": [
-        # bootstrap CIs behind the two similarity tables
+        # Tab. similarity, Tab. encoder-matrix, Tab. collab-per-window: the paired per-unit
+        # score pools that unc_bootstrap resamples (the pools need the 644k gene matrices).
         "data/uncertainty/pools/*.parquet",
-        "data/uncertainty/uncertainty_summary.csv",
-        "data/uncertainty/bootstrap_replicates.parquet",
-        # per-task score tables
+        # per-task score tables behind numbers typed into the text
         "data/kron/results_*.csv",
         "data/s2and/results_*.csv",
         "data/s2and/proc/*/sig_table.parquet",
-        # invertible adapters (small: ~10^5-10^7 params)
+        # invertible adapters (small: ~10^5-10^7 params) and the citation sample of g_theta
         "data/kron/adapter_*.pt",
         "data/general_adapter/adapter_general_*.pt",
         "data/general_adapter/leakage_overlap.json",
         "data/general_adapter/triplets_1x.parquet",
         "data/general_adapter/triplets.parquet",
-        # cluster-labelling chain
+        # the PACS node set the cluster labels are scored against
         "data/pacs/results/*.parquet",
         "data/pacs/results/tree.json",
+        # Tab. hierarchy-labels + Tab. label-eval: every method's raw cluster labels (GPU
+        # decodes, vec2text, KeyLLM, ICAE, in-context, T2L, BERTopic), the node set, the
+        # node means, the judge verdicts, and the Wikipedia radius walk (Fig. cluster-labels).
         "data/labels/*.json",
-        "data/labels/*.csv",
-        "data/labels/*.tex",
+        "data/labels/length_vs_breadth.csv",
         "data/labels/qwen_fullrank_means.npz",
-        # appendix controls
-        "data/groupc/psens/*.json",
-        "data/groupc/psens/*.parquet",
+        # Tab. prompt-sensitivity: the paraphrase decodes
+        "data/groupc/psens/psens_*.json",
+        # Tab. incoherent-control: clusters, decodes, and the SBERT + judge scores
         "data/groupc/incoherent/*.json",
         "data/groupc/incoherent/*.parquet",
         "data/groupc/fidelity/sample.parquet",
-        # benchmark pair lists + the pooling rho
+        # App. symmetric-adapter: the per-unit score pools of the symmetric-adapter benchmark
+        "data/groupc/bench/pools/*",
+        # Fig. cluster-labels (e),(f), Tab. mixing-decode, Fig. psens-edge: the pair-axis
+        # decodes (Doc2LoRA and ICAE, every stratum and paraphrase), their corner specs,
+        # and the SBERT landing-position / copy-rate / T2L caches the figure reads
+        "data/pair_axis/corners_pair*.json",
+        "data/pair_axis/pair_manifest.json",
+        "data/pair_axis/results/absfollow_pair*_pairaxis.json",
+        "data/pair_axis/results/absfollow_pair*_pairaxis_icae.json",
+        "data/pair_axis/results/absfollow_pair*_pairaxis_p?.json",
+        "data/pair_axis/results/absfollow_pair*_pairaxis_p?_icae.json",
+        "data/pair_axis/results/colorband_*_pairaxis.json",
+        "data/pair_axis/results/pair_axis_*_pairaxis*.json",
+        "data/t2l/results/midpoints_t2l_*.json",
+        # benchmark pair lists + the pooling rho quoted in Sec. methods
         "data/collab_scores_aps_*.parquet",
         "data/aps/pooling_spearman.csv",
-        # the manuscript tables themselves (so a reader can diff their rebuild)
-        "results/figs/similarity_benchmarks.tex",
-        "results/figs/encoder_matrix.tex",
-        "results/figs/prompt_sensitivity.tex",
-        "results/figs/incoherent_control.tex",
-        "results/figs/hierarchy_rows.tex",
+        # the manuscript's own tables, to diff a rebuild against (results/figs is where
+        # the rebuild lands, so the reference copies live apart from it)
+        "data/reference/*.tex",
     ],
     "s2and": [
         "data/s2and/proc/*/genes_*.npz",
@@ -103,6 +121,9 @@ TIERS: dict[str, list[str]] = {
     ],
 }
 
+# Member timestamp (2026-09-01 00:00 UTC). Override with SOURCE_DATE_EPOCH.
+MTIME = int(os.environ.get("SOURCE_DATE_EPOCH", 1788220800))
+
 # Tiers we actually ship as a Zenodo record. `aps` is inventoried, not bundled.
 SHIPPED = ("results", "s2and")
 
@@ -117,6 +138,14 @@ EXCLUDE: tuple[str, ...] = (
     # look for numbers that no table draws on.
     "data/kron/results_*_icae.csv",
     "data/s2and/results_*_icae.csv",
+    # Outputs of the CPU rules `paper_assets` runs. Shipping them would let Snakemake skip
+    # the very steps a reader unpacks the tier to re-run.
+    "data/labels/label_eval_nodes.json",
+    "data/labels/label_eval_metric1.json",
+    "data/labels/label_eval_summary.json",
+    "data/groupc/psens/psens_scores.json",
+    # hand-kept backups next to the live label files
+    "data/labels/*.bak.json",
 )
 
 
@@ -155,6 +184,10 @@ def write_manifest(rows: list[tuple[str, str, int, str]]) -> None:
                 continue
             tier, path, size, digest = line.split("\t")
             existing[(tier, path)] = (tier, path, int(size), digest)
+    # A tier that was just bundled replaces its rows wholesale, so a file that left the
+    # tier also leaves the manifest. Tiers not bundled in this call keep their rows.
+    rebuilt = {row[0] for row in rows}
+    existing = {k: v for k, v in existing.items() if k[0] not in rebuilt}
     for row in rows:
         existing[(row[0], row[1])] = row
     with MANIFEST.open("w") as fh:
@@ -172,9 +205,19 @@ def make_tar(tier: str, files: list[Path], out_dir: Path, level: int = 10) -> Pa
     tar_path = out_dir / f"doc2lora-{tier}.tar"
     # dereference: the artifacts are symlinks into a shared store, so the bundle
     # must carry the bytes, not the links.
-    with tarfile.open(tar_path, "w", dereference=True) as tf:
-        for p in files:
-            tf.add(p, arcname=str(p.relative_to(SRC)))
+    # One timestamp for every member. The archive then does not depend on when a file
+    # happened to be written in the source run, and -- what matters for Snakemake -- no
+    # unpacked input is newer than an unpacked output, so `--rerun-triggers mtime` never
+    # schedules a rule whose result ships in the tier.
+    def normalise(info: tarfile.TarInfo) -> tarfile.TarInfo:
+        info.mtime = MTIME
+        info.uid = info.gid = 0
+        info.uname = info.gname = ""
+        return info
+
+    with tarfile.open(tar_path, "w", dereference=True, format=tarfile.PAX_FORMAT) as tf:
+        for p in sorted(files):
+            tf.add(p, arcname=str(p.relative_to(SRC)), filter=normalise)
     if use_zstd:
         subprocess.run(["zstd", f"-{level}", "-T0", "--rm", "-f", str(tar_path)], check=True)
         tar_path = tar_path.with_suffix(".tar.zst")

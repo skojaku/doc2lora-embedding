@@ -27,7 +27,7 @@ HERE = Path(__file__).resolve().parent
 from bench_data import out_dir   # bench_data.py sits next to this file
 DATA = out_dir("labels")           # where this chain writes
 
-GROUPS = HERE.parent / "2026-05-28-concept-analogy-aps" / "results" / "groups.parquet"
+GROUPS = out_dir("pacs") / "results" / "groups.parquet"   # the labelled PACS tree (pacs_groups.smk)
 
 # experiment field digit -> field name (combine_fields9.py NAMES, 4 used fields)
 FIELD_NAME = {"0": "General", "2": "Classical physics",
@@ -67,7 +67,7 @@ RNG = random.Random(42)
 
 
 def load_method(fname):
-    d = json.loads((HERE / fname).read_text())
+    d = json.loads((DATA / fname).read_text())
     out = {}
     for k, v in d.items():
         s = v["label"] if isinstance(v, dict) else v
@@ -187,7 +187,7 @@ def main():
         print(f"\n[{r['kind']} {r['code']}] gt={r['gt_label']!r}")
         print(f"   anc={a!r}\n   desc={d!r}")
         print(f"   doc2lora={r['decoded']['doc2lora']!r}  keyllm={r['decoded']['keyllm']!r}")
-    print(f"\nwrote {HERE / 'label_eval_nodes.json'}")
+    print(f"\nwrote {DATA / 'label_eval_nodes.json'}")
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ Usage
     python scripts/fetch_artifacts.py results s2and      # + 14 GB: re-score name disambiguation
     python scripts/fetch_artifacts.py --verify           # re-check what is already on disk
     python scripts/fetch_artifacts.py --record 1234567 results   # pin a specific record
+    python scripts/fetch_artifacts.py --from ~/Downloads results   # tarballs you already have
 
 The APS gene matrices (~190 GB) are deliberately NOT distributed -- they exceed a
 Zenodo record and are a deterministic function of the corpus plus the published
@@ -141,12 +142,19 @@ def unpack(tar_path: Path) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("tiers", nargs="*", choices=TIERS, help="which bundles to fetch")
+    # No `choices=` here: with nargs="*" argparse checks the empty default against them
+    # and rejects a bare `--verify`. Checked by hand below instead.
+    ap.add_argument("tiers", nargs="*", help=f"which bundles to fetch: {', '.join(TIERS)}")
     ap.add_argument("--record", default=ZENODO_RECORD, help="Zenodo record id (numeric)")
     ap.add_argument("--verify", action="store_true", help="only verify what is already unpacked")
     ap.add_argument("--keep-tar", action="store_true", help="do not delete the tarball after unpacking")
+    ap.add_argument("--from", dest="from_dir", type=Path, default=None,
+                    help="unpack doc2lora-<tier>.tar.zst from this directory instead of downloading")
     args = ap.parse_args()
 
+    bad_tiers = [t for t in args.tiers if t not in TIERS]
+    if bad_tiers:
+        ap.error(f"unknown tier(s) {', '.join(bad_tiers)}; choose from {', '.join(TIERS)}")
     manifest = load_manifest()
 
     if args.verify:
@@ -158,6 +166,20 @@ def main() -> int:
 
     if not args.tiers:
         ap.error("name at least one tier, or pass --verify")
+    if args.from_dir:
+        for tier in args.tiers:
+            local = sorted(args.from_dir.glob(f"doc2lora-{tier}.tar*"))
+            if not local:
+                sys.exit(f"no doc2lora-{tier}.tar* in {args.from_dir}")
+            print(f"{tier}: unpacking {local[0]}")
+            unpack(local[0])
+            if local[0].suffix == ".zst":
+                local[0].with_suffix("").unlink(missing_ok=True)   # the decompressed copy
+            _, bad, missing = verify(tier, manifest.get(tier, []))
+            if bad or missing:
+                return 1
+        return 0
+
     if not args.record:
         sys.exit("no Zenodo record id: pass --record <id> (the DOI page shows it), "
                  "or set ZENODO_RECORD at the top of this script once the record is minted")

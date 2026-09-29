@@ -52,17 +52,19 @@ intermediates, so a reader does not have to re-derive them. Reproducing from the
 corpora instead needs roughly 200 GB of intermediates and several GPU-days.</p>
 
 <ul>
-<li><b>doc2lora-repro-code-&lt;sha&gt;.tar.gz</b> &mdash; the workflow itself: a Snakemake
-pipeline trimmed to the dependency closure of what the manuscript reads (17 rule files;
-<code>snakemake -n paper_assets</code> resolves 157 jobs from the raw corpora). Includes
+<li><b>doc2lora-embedding-code-&lt;sha&gt;.tar.gz</b> &mdash; the workflow itself: a Snakemake
+pipeline trimmed to the dependency closure of what the manuscript reads (24 rule files;
+<code>snakemake -n paper_assets</code> resolves 330 jobs from the raw corpora). Includes
 <code>REPRODUCE.md</code>, which maps every figure, table and quoted number to the rule that
 produces it, and <code>data/ARTIFACTS.tsv</code>, a SHA-256 per archived file.</li>
-<li><b>doc2lora-results.tar.zst</b> (219 files) &mdash; every scored and aggregated
-artifact downstream of the embeddings: the paired per-unit score pools behind the
-bootstrap confidence intervals, S2AND signature tables, the invertible adapter
-weights, the cluster-label evaluation outputs, and the PACS node set. With this
-bundle alone, <code>snakemake paper_assets</code> rebuilds every table in the paper
-on a CPU.</li>
+<li><b>doc2lora-results.tar.zst</b> (1227 files) &mdash; everything the manuscript's
+tables and figures are computed from that needs a GPU, the licensed APS text, or an LLM
+judge to produce: the paired per-unit score pools behind the bootstrap confidence
+intervals, the invertible adapter weights, every method's raw cluster labels and the
+judge verdicts, the pair-axis decodes (Doc2LoRA and ICAE), the PACS node set, and the
+manuscript's own tables for comparison. With this bundle alone,
+<code>snakemake paper_assets --rerun-triggers mtime</code> rebuilds every table and
+figure the paper reads, running only CPU rules.</li>
 <li><b>doc2lora-s2and.tar.zst</b> (50 files) &mdash; the gene and text embeddings for
 the five author-name-disambiguation benchmarks (zbMATH, QIAN, ArnetMiner, PubMed,
 KISTI), so the disambiguation rows can be re-scored from the vectors up.</li>
@@ -71,10 +73,10 @@ KISTI), so the disambiguation rows can be re-scored from the vectors up.</li>
 <p>Unpack the code snapshot, then fetch and verify the bundles against
 <code>data/ARTIFACTS.tsv</code> (SHA-256 per file):</p>
 
-<pre>tar xzf doc2lora-repro-code-&lt;sha&gt;.tar.gz &amp;&amp; cd doc2lora-repro-&lt;sha&gt;
+<pre>tar xzf doc2lora-embedding-code-&lt;sha&gt;.tar.gz &amp;&amp; cd doc2lora-embedding-&lt;sha&gt;
 cp workflow/config.template.yaml workflow/config.yaml   # edit the paths
 python scripts/fetch_artifacts.py results --record &lt;this record&gt;
-snakemake paper_assets -j4                              # rebuilds every table, CPU only</pre>
+snakemake paper_assets -j4 --rerun-triggers mtime      # rebuilds every table, CPU only</pre>
 
 <p>The 644k-paper APS gene matrices (~137 GB) are not included: they exceed a
 Zenodo record and are a deterministic function of the APS corpus plus the
@@ -87,13 +89,18 @@ METADATA = {
         "upload_type": "dataset",
         "title": TITLE,
         "description": DESCRIPTION,
-        "creators": [{"name": "Kojaku, Sadamori", "affiliation": "Binghamton University"}],
+        "creators": [
+            # Mansuri and Zachariah contributed equally.
+            {"name": "Mansuri, Chand Sahil", "affiliation": "Binghamton University"},
+            {"name": "Zachariah, Joel", "affiliation": "Binghamton University"},
+            {"name": "Kojaku, Sadamori", "affiliation": "Binghamton University"},
+        ],
         "license": "cc-by-4.0",
         "access_right": "open",
         "keywords": ["document embeddings", "LoRA", "hypernetwork", "science of science",
                      "reproducibility", "author name disambiguation", "Snakemake workflow"],
         "related_identifiers": [
-            {"identifier": "https://github.com/skojaku/doc2lora-repro",
+            {"identifier": "https://github.com/skojaku/doc2lora-embedding",
              "relation": "isSupplementTo", "resource_type": "software"},
         ],
     }

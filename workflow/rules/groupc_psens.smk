@@ -27,7 +27,7 @@ PS_FIG = j(FIGS_DIR, "prompt_sensitivity.pdf")
 
 D2L_SRC = config.get("doc_to_lora_src", "doc-to-lora/src")
 D2L_ENV = (
-    "set -a; source .env 2>/dev/null; set +a; "
+    "set -a; source .env 2>/dev/null || true; set +a; "
     f"export DOC_TO_LORA_SRC={D2L_SRC} PYTHONPATH={D2L_SRC} "
     f"HF_HOME={config.get('hf_home', 'data/agent_assets/hf_cache')} "
     "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True; "

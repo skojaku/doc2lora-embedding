@@ -54,7 +54,7 @@ rule embed_text_baseline:
     resources:
         gpu=1,
     shell:
-        "set -a; source .env 2>/dev/null; set +a; "
+        "set -a; source .env 2>/dev/null || true; set +a; "
         "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True "
         "{params.py} workflow/scripts/embed_text_baselines_field.py "
         "--paper-text {input.paper_text} --method {wildcards.method} "
@@ -86,7 +86,7 @@ rule embed_aps_text_baseline:
     resources:
         gpu=1,
     shell:
-        "set -a; source .env 2>/dev/null; set +a; "
+        "set -a; source .env 2>/dev/null || true; set +a; "
         "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True "
         "python workflow/scripts/embed_text_baselines_field.py "
         "--paper-text {input.paper_text} --method {wildcards.method} "

@@ -167,7 +167,7 @@ rule gcb_embed:
         gpu=1,
         mem_gb=30,
     shell:
-        "set -a; source .env 2>/dev/null; set +a; "
+        "set -a; source .env 2>/dev/null || true; set +a; "
         "NEED_MB=20000 bash workflow/scripts/gpu_lease.sh "
         "{params.py} workflow/scripts/groupc/gcb_embed.py --input {input.subset} "
         "--method {wildcards.method} --out {output.npz} --batch-size {params.batch}"
@@ -206,7 +206,7 @@ rule gcb_pool_embed:
         gpu=1,
         mem_gb=30,
     shell:
-        "set -a; source .env 2>/dev/null; set +a; "
+        "set -a; source .env 2>/dev/null || true; set +a; "
         "NEED_MB=20000 bash workflow/scripts/gpu_lease.sh "
         "{params.py} workflow/scripts/groupc/gcb_embed.py --input {input.pool} "
         "--method {wildcards.method} --out {output.npz} --batch-size {params.batch}"
@@ -228,7 +228,7 @@ rule gcb_pool_embed_1x:
         gpu=1,
         mem_gb=30,
     shell:
-        "set -a; source .env 2>/dev/null; set +a; "
+        "set -a; source .env 2>/dev/null || true; set +a; "
         "NEED_MB=20000 bash workflow/scripts/gpu_lease.sh "
         "{params.py} workflow/scripts/groupc/gcb_pool_incremental.py --method {wildcards.method} "
         "--pool {input.pool} --existing {input.existing} --out {output.npz} "

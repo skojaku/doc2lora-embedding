@@ -67,12 +67,12 @@ snakemake sample_judge -j1 \
 
 | # | You want to | Command | Needs |
 |---|---|---|---|
-| 1 | Rebuild every reported **table** from archived scores | `python scripts/fetch_artifacts.py results` then `snakemake paper_assets -j4` | CPU, ~192 MB download |
+| 1 | Rebuild every reported **table and figure** from archived scores | `python scripts/fetch_artifacts.py results` then `snakemake paper_assets -j4 --rerun-triggers mtime` | CPU, ~224 MB download |
 | 2 | Re-score the **name-disambiguation** rows from the vectors | `python scripts/fetch_artifacts.py results s2and` then `snakemake s2and uncertainty -j4` | CPU, +12 GB download |
 | 3 | Re-derive **everything from the corpora**, genes included | `snakemake paper_assets -j4` | 1–4 GPUs (≥48 GB total), ~200 GB disk, licensed APS corpus |
 
 ```bash
-snakemake -n paper_assets      # the whole DAG, nothing run: 329 jobs from a cold start
+snakemake -n paper_assets      # the whole DAG, nothing run: 330 jobs from a cold start
 ```
 
 `REPRODUCE.md` is the result → code map: for every figure, table, and quoted number,
@@ -135,8 +135,9 @@ Archived **intermediates** (per-unit score pools, adapters, benchmark embeddings
 Zenodo:
 
 ```bash
-python scripts/fetch_artifacts.py results        # ~192 MB -> every table rebuilds on a CPU
+python scripts/fetch_artifacts.py results        # ~224 MB, 1227 files -> every table rebuilds on a CPU
 python scripts/fetch_artifacts.py --verify       # re-check what is already on disk
+snakemake paper_assets -j4 --rerun-triggers mtime   # 29 CPU jobs: tables + figures
 ```
 
 The script downloads, unpacks into the repository, and verifies every file against

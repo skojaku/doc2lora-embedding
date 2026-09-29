@@ -109,7 +109,7 @@ rule sample_judge:
     output:
         j(SMP_LABELS, "label_eval_metric4.json"),
     shell:
-        SMP_ENV + "set -a; source .env 2>/dev/null; set +a; "
+        SMP_ENV + "set -a; source .env 2>/dev/null || true; set +a; "
         f"JUDGE_PANEL='{SMP_JUDGES}' python {{input.script}}"
 
 

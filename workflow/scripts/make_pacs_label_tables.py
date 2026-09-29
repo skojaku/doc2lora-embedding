@@ -20,7 +20,7 @@ from bench_data import out_dir   # bench_data.py sits next to this file
 DATA = out_dir("labels")           # where this chain writes
 
 GROUPS = (
-    HERE.parent / "2026-05-28-concept-analogy-aps" / "results" / "groups.parquet"
+    out_dir("pacs") / "results" / "groups.parquet"   # the labelled PACS tree (pacs_groups.smk)
 )
 RADIUS_CSV = DATA / "length_vs_breadth.csv"
 

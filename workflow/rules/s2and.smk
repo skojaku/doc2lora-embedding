@@ -23,7 +23,7 @@ S2AND_TEXT = ["sbert", "instructor", "embeddinggemma", "gte"]   # embeddinggemma
 EMGEMMA_PY = ".venv-emgemma/bin/python"                  # transformers>=4.56 (main env is pinned 4.51.3)
 
 S2_HF = os.path.abspath("data/agent_assets/hf_cache")
-S2_ENV = (f"set -a; source .env 2>/dev/null; set +a; "
+S2_ENV = (f"set -a; source .env 2>/dev/null || true; set +a; "
           f"export HF_HOME={S2_HF} PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True;")
 GPU = f"bash {SCRIPTS}/gpu_run.sh"
 
