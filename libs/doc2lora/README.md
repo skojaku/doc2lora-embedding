@@ -25,7 +25,6 @@ print(decode_adapter(model, gen_tok, blend))     # -> "...evolutionary game theo
 
 ```bash
 pip install -e libs/doc2lora            # core
-pip install -e libs/doc2lora[demo]      # + marimo, for the demo notebook
 pip install -e libs/doc2lora[dev]       # + pytest, ruff (to run the tests)
 ```
 
@@ -40,7 +39,8 @@ install it as a second step (and, on CUDA, build the `flash-attn` wheel — see
 the root README):
 
 ```bash
-pip install -e /path/to/doc-to-lora      # provides the `ctx_to_lora` package
+git clone https://github.com/SakanaAI/doc-to-lora
+pip install -e doc-to-lora               # provides the `ctx_to_lora` package
 pip install -e libs/doc2lora[gpu]        # declares flash-attn (needs a build toolchain)
 ```
 
@@ -49,8 +49,9 @@ than a bare `ImportError`.
 
 ### Checkpoints
 
-A `CKPT` is a doc2lora checkpoint `.bin`. `load_model()` resolves it in one
-canonical order (matching the root README): the explicit argument, then the
+A `CKPT` is a doc2lora checkpoint `.bin` (the released ones are on Hugging Face at
+[SakanaAI/doc-to-lora](https://huggingface.co/SakanaAI/doc-to-lora)). `load_model()`
+resolves it in one canonical order: the explicit argument, then the
 `$DOC2LORA_CKPT` environment variable, then a repo-relative fallback under
 `data/agent_assets/<model>/checkpoint-<step>/pytorch_model.bin` (the lightweight
 one is `data/agent_assets/qwen_4b_d2l/checkpoint-20000/pytorch_model.bin`). So

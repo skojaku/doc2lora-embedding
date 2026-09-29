@@ -6,7 +6,7 @@
 #     $EDITOR workflow/config.yaml
 #
 # `Snakefile` does `configfile: "workflow/config.yaml"`, and that file is
-# gitignored so your machine's paths never land in git. Nine keys are read with a
+# gitignored so your machine's paths never land in git. Eight keys are read with a
 # hard `config[...]` and must be present or Snakemake fails at parse time:
 #
 #     data_dir  aps_paper_table  openalex_paper_table
@@ -171,8 +171,8 @@ eff_n_train: 50000
 eff_n_base: 50000
 eff_n_query: 2000
 
-# ── Temporal hardening / decontamination (App. datasets, #72) ────────────
-bench_root: "data/bench"       # benchmark-subset embeddings (the #63 slicer)
+# ── Temporal hardening / decontamination (App. A) ─────────────────────────
+bench_root: "data/bench"       # benchmark-subset embeddings (bench.smk slicer)
 gcb_fields: ["aps", "economics", "psychology"]
 gcb_new_encoders: ["bge", "gte", "embeddinggemma"]
 gcb_transform_methods: ["gene", "sbert", "specter2", "instructor", "embeddinggemma", "bge", "gte"]
@@ -211,4 +211,4 @@ fig2_t2l_space: "e1"           # T2L position: e0 gte, e1 TaskEncoder, e2 LoRA f
 
 # ── Abstraction walk (Wikipedia radius sweep) ────────────────────────────
 abstraction_walk_gpu: "0"      # CUDA_VISIBLE_DEVICES for the decode
-vec2text_python: ".venv-vec2text/bin/python"   # isolated env for the inverter arm
+vec2text_python: ".venv-vec2text/bin/python"   # isolated env for the vec2text inverter

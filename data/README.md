@@ -9,6 +9,6 @@ manifest is tracked.
 - Everything else: point `workflow/config.yaml:data_dir` here (or symlink this
   directory at your storage) and let the workflow fill it.
 
-Tiers: `results` (~192 MB, 219 files — rebuild every table on a CPU),
+Tiers: `results` (~224 MB download, 1227 files — rebuild every table on a CPU),
 `s2and` (~12.3 GB, 50 files — re-score name disambiguation from the vectors),
 `aps` (~137 GB, 12 files — NOT distributed; `snakemake all_embeddings`).
