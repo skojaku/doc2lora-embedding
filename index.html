@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doc2LoRA Provides Decodable Representations of Scientific Ideas</title>
+<meta name="description" content="Maps of science are built for search. Doc2LoRA builds one that can also generate: every point, including the empty space between papers, is a language model you can ask what idea lives there.">
+<meta property="og:title" content="Doc2LoRA Provides Decodable Representations of Scientific Ideas">
+<meta property="og:description" content="An embedding of scientific papers that serves both search and generation: every point on the map is a language model you can question.">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://skojaku.github.io/doc2lora-embedding/figs/fig1-pipeline.png">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='%23eb6834'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme:light;
+    --bg:#ffffff; --ink:#1a1a1a; --ink2:#52514e; --muted:#767676; --line:#e6e6e6; --rule:#c3c2b7;
+    --d2l:#eb6834; --d2l-tint:#fdf0ea; --hl-a:#dce9f9; --hl-b:#fde2d6;
+    --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);font-size:19px;line-height:1.7;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:680px;margin:0 auto;padding:0 20px}
+  .wide{max-width:1000px;margin:0 auto;padding:0 20px}
+  a{color:inherit;text-decoration:underline;text-decoration-color:var(--rule);text-decoration-thickness:1px;text-underline-offset:3px}
+  a:hover{text-decoration-color:var(--d2l)}
+
+  header{padding:88px 0 8px}
+  h1{font-weight:600;font-size:clamp(30px,5vw,44px);line-height:1.14;letter-spacing:-.012em;margin:0 0 22px}
+  .lead{font-size:21px;line-height:1.6;color:var(--ink2);margin:0 0 28px}
+  .authors{font-family:var(--sans);font-size:15px;line-height:1.6;color:var(--ink2)}
+  .authors b{color:var(--ink);font-weight:600}
+  .authors sup{font-size:10px}
+  .links{font-family:var(--sans);font-size:15px;margin-top:14px;display:flex;flex-wrap:wrap;gap:6px 22px}
+
+  section{padding-top:56px}
+  h2{font-weight:600;font-size:clamp(24px,3.6vw,29px);line-height:1.25;letter-spacing:-.008em;margin:0 0 18px}
+  h3{font-family:var(--sans);font-size:16px;font-weight:600;margin:40px 0 10px}
+  p{margin:0 0 1.05em}
+  em{font-style:italic}
+  .g{font-style:italic}
+
+  figure{margin:34px 0 38px}
+  figure img{display:block;width:100%;height:auto}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;max-width:820px;margin:0 auto}
+  .pair.c-d{grid-template-columns:1fr 1.2fr;max-width:none}
+  .trio{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:820px;margin:0 auto}
+  .trio span{display:block;font-family:var(--sans);font-size:14px;line-height:1.4;color:var(--ink);text-align:center;margin-top:10px}
+  figcaption{font-family:var(--sans);font-size:14.5px;line-height:1.55;color:var(--ink2);max-width:680px;margin:14px auto 0}
+  figcaption b{color:var(--ink);font-weight:600}
+
+  .legend{font-family:var(--sans);font-size:13.5px;color:var(--ink2);display:flex;flex-wrap:wrap;gap:8px 24px;margin:0 0 14px}
+  .legend span{display:inline-flex;align-items:center;gap:8px}
+  .sw{display:inline-block;flex:none}
+  .sw.raw{width:11px;height:11px;border-radius:50%;border:2px solid var(--d2l);background:#fff}
+  .sw.adapted{width:12px;height:12px;border-radius:50%;background:var(--d2l)}
+  .sw.band{width:30px;height:11px;border-radius:6px;background:var(--line);
+    background-image:linear-gradient(90deg,transparent 7px,var(--muted) 7px,var(--muted) 9px,transparent 9px,transparent 20px,var(--muted) 20px,var(--muted) 22px,transparent 22px)}
+
+  .chartbox{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .swipe{display:none;font-family:var(--sans);font-size:12.5px;color:var(--muted);margin:0 0 8px}
+  svg.chart{display:block;width:100%;height:auto;min-width:600px}
+  .chart text{font-family:var(--sans);font-size:13px;fill:var(--ink2)}
+  .chart .tick{font-size:12px;fill:var(--muted);font-variant-numeric:tabular-nums}
+  .chart .axt{font-size:12.5px;fill:var(--ink2)}
+  .chart .lab,.chart .rl,.chart .gain{fill:var(--ink)}
+  .chart .strong{font-weight:700}
+  .chart .num{font-variant-numeric:tabular-nums}
+  .chart .ptitle{font-size:14px;font-weight:600;fill:var(--ink)}
+  .chart .pmetric{font-weight:400;fill:var(--muted)}
+  .chart .colhead,.chart .rowcap{font-size:12px;fill:var(--muted)}
+  .chart .ghead{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;fill:var(--muted)}
+
+  table{border-collapse:collapse}
+  .mix{width:100%;font-family:var(--sans);font-size:14px;line-height:1.55}
+  .mix th,.mix td{text-align:left;vertical-align:top;padding:12px 12px 12px 0;border-top:1px solid var(--line)}
+  .mix thead th{font-size:13px;font-weight:600;color:var(--ink2);border-top:0;padding-top:0}
+  .mix tbody th{font-weight:600;white-space:nowrap;width:1%;padding-right:18px}
+  .mix td{color:var(--ink);width:33%}
+  mark{color:inherit;padding:0 2px;border-radius:2px}
+  mark.a{background:var(--hl-a)}
+  mark.b{background:var(--hl-b)}
+
+  details{margin:22px 0 0;font-family:var(--sans)}
+  summary{cursor:pointer;font-size:15px;color:var(--ink2)}
+  summary:hover{color:var(--ink)}
+  .tablebox{overflow-x:auto;margin-top:16px}
+  .scores{width:100%;min-width:720px;font-size:13.5px;font-variant-numeric:tabular-nums}
+  .scores th,.scores td{padding:6px 8px;text-align:right;white-space:nowrap}
+  .scores thead th{font-weight:600;color:var(--ink2);border-bottom:1px solid var(--rule);font-size:12.5px}
+  .scores thead th.grp{text-align:center;border-bottom:1px solid var(--line)}
+  .scores thead th[rowspan]{text-align:left;vertical-align:bottom}
+  .scores th.task,.scores th.ds{text-align:left;font-weight:400;color:var(--ink)}
+  .scores th.task{font-weight:600;vertical-align:top;white-space:normal;width:150px}
+  .scores .metric{display:block;font-weight:400;color:var(--muted);font-size:12px}
+  .scores tr.first>*{border-top:1px solid var(--line)}
+  .scores .d2l{background:var(--d2l-tint)}
+  .scores .best{font-weight:700}
+  .scores .sd{color:var(--muted);font-size:11px;margin-left:2px;font-weight:400}
+
+  pre.bib{background:#f6f6f4;padding:18px;overflow:auto;font-family:var(--mono);font-size:13px;line-height:1.55;margin:0}
+  footer{margin-top:72px;padding:28px 0 64px;border-top:1px solid var(--line);font-family:var(--sans);font-size:14px;color:var(--muted)}
+
+  @media (max-width:760px){
+    body{font-size:18px}
+    header{padding-top:56px}
+    .lead{font-size:19px}
+    .pair,.pair.c-d{grid-template-columns:1fr;gap:18px}
+    .pair img{max-width:480px;margin:0 auto}
+    .trio{gap:10px}
+    .trio span{font-size:12.5px}
+    .swipe{display:block}
+    .mix thead{display:none}
+    .mix,.mix tbody,.mix tr,.mix th,.mix td{display:block;width:auto}
+    .mix tbody th{padding:16px 0 4px;border-top:1px solid var(--rule)}
+    .mix td{border-top:0;padding:4px 0 8px}
+    .mix td::before{content:attr(data-w);display:block;font-size:12px;color:var(--muted)}
+  }
+
+  .lsw{width:15px;height:15px;flex:none}
+  .legend + .legend{margin-top:-6px}
+  .mixctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-family:var(--sans);font-size:14px;max-width:680px;margin:0 auto 18px}
+  .mixctl input[type=range]{flex:1;min-width:160px;accent-color:var(--ink)}
+  .mixctl .end{font-weight:600;padding:1px 6px;border-radius:3px}
+  .mixctl .end.a{background:var(--hl-a)}
+  .mixctl .end.b{background:var(--hl-b)}
+  .mixctl output{flex-basis:100%;text-align:center;color:var(--ink2);font-variant-numeric:tabular-nums}
+  .mixgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:32px;font-family:var(--sans);font-size:14.5px;line-height:1.6}
+  .mixgrid .mh{font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--line);margin-bottom:8px}
+  .mixgrid .mt{margin:0;min-height:39em}
+  .mcount{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:12.5px;color:var(--ink2);font-variant-numeric:tabular-nums}
+  .mcount .bar{display:flex;width:90px;height:8px;border-radius:4px;overflow:hidden;background:var(--line);flex:none}
+  .mcount .ba{background:#9fc2ee}.mcount .bb{background:#f4b79c}
+  .tabs{display:flex;justify-content:center;gap:4px;max-width:820px;margin:18px auto 0;border-bottom:1px solid var(--line);font-family:var(--sans)}
+  .tabs button{font:inherit;font-size:14px;background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:8px 14px;color:var(--muted);cursor:pointer}
+  .tabs button:hover{color:var(--ink)}
+  .tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
+  .tabs button:focus-visible{outline:2px solid var(--d2l);outline-offset:2px}
+  .tabpanel{max-width:680px;margin:14px auto 0}
+  .tabnote{font-family:var(--sans);font-size:13px;color:var(--muted);margin:0 0 8px}
+  .recipe{white-space:pre-wrap;font-family:var(--sans);font-size:14px;line-height:1.6;background:#f6f6f4;padding:16px 18px}
+  .trio img{cursor:pointer}
+  @media (max-width:760px){
+    .mixgrid{grid-template-columns:1fr;gap:16px}
+    .mixgrid .mt{min-height:0}
+    .tabs button{padding:8px 8px;font-size:13px}
+  }
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <h1>Doc2LoRA provides decodable representations of scientific ideas</h1>
+  <p class="lead">We construct a map of scientific papers where every point is a large language model, open to questions about the encoded ideas, including regions with no existing papers.</p>
+  <div class="authors">
+    <b>Chand Sahil Mansuri</b><sup>*</sup>, <b>Joel Zachariah</b><sup>*</sup>, <b>Sadamori Kojaku</b><br>
+    School of Systems Science and Industrial Engineering, Binghamton University<br>
+    <sup>*</sup>Equal contribution
+  </div>
+  <div class="links">
+    <a href="#">Paper (arXiv, coming soon)</a>
+    <a href="https://github.com/skojaku/doc2lora-embedding">Code</a>
+    <a href="#cite">BibTeX</a>
+  </div>
+</div></header>
+
+<section id="search"><div class="wrap">
+  <h2>A map built for search</h2>
+  <p>An embedding places a paper as a point on a map of science. Papers on similar topics cluster together, making it easy to find related work or recommend what to read next. Most embeddings are optimized for this task, and they generally perform it well. As a result, these maps can show the current landscape of science.</p>
+  <p>But a map can offer more than just location. New ideas often emerge from blending existing ones, and on a map, this is as simple as averaging two points and seeing where you are. The interesting question is: what idea does that new location actually represent?</p>
+  <p>Standard embeddings can't answer this directly because the components of the vector have no clear interpretable meaning. Usually, we check which papers are closest and try to infer the meaning, but this heuristic relies on the premise that nearby papers accurately represent the interpolated area, which does not always hold. Crucially, the most interesting regions—combinations that haven't been tried—are precisely where there are no actual papers.</p>
+</div></section>
+
+<section id="method"><div class="wrap">
+  <h2>Every point becomes a model</h2>
+  <p>We use <a href="https://arxiv.org/abs/2602.15902">Doc-to-LoRA</a>, a hypernetwork that reads a document and creates a <a href="https://arxiv.org/abs/2106.09685">LoRA adapter</a>: a small module that changes the output of a language model as if it had read the document.</p>
+  <p>While large language models have many parameters, the embedding is compact as it contains only the information about the document.  It offers idea arithmetic: any point—single document, group average, or an interpolation—can be turned into a LoRA adapter and loaded into a language model for direct question answering. </p>
+</div>
+<div class="wide"><figure>
+  <img src="figs/fig1-pipeline.png" width="2800" height="1228" alt="Doc2LoRA pipeline: text is encoded into an embedding, reshaped by a reversible function, and decoded to a LoRA adapter. Blended embeddings create blended adapters.">
+  <figcaption><b>Figure 1.</b> Doc2LoRA encodes a document to an embedding. A reversible transform <span class="g">g</span> reshapes embeddings for search. Any embedding, including blends, is decoded to a LoRA adapter for the language model.</figcaption>
+</figure></div>
+<div class="wrap">
+  <p>For example: we embedded two recipes, Italian cacio e pepe and Japanese kake udon. The Italian adapter produces “Pecorino Romano” as the cheese. Halfway between the two, the model describes “Kake Udon with Creamy Parmesan Sauce”—mixing noodles from one and cheese from the other.</p>
+</div>
+<div class="wide"><figure>
+  <div class="trio">
+    <div><img src="figs/recipe-cacio-e-pepe.jpg" width="900" height="900" alt="A bowl of cacio e pepe: thin pasta in a glossy Pecorino and black pepper sauce."><span>Cacio e pepe</span></div>
+    <div><img src="figs/recipe-midpoint.jpg" width="900" height="900" alt="A bowl of thick udon noodles coated in a creamy Parmesan sauce, topped with grated cheese."><span>Halfway: <em>Kake Udon with Creamy Parmesan Sauce</em></span></div>
+    <div><img src="figs/recipe-kake-udon.jpg" width="900" height="900" alt="A bowl of kake udon: thick udon noodles in a clear dashi broth with sliced green onion."><span>Kake udon</span></div>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Recipe text">
+    <button role="tab" id="tab-a" aria-controls="panel-a" aria-selected="false" tabindex="-1">Cacio e pepe</button>
+    <button role="tab" id="tab-mid" aria-controls="panel-mid" aria-selected="true">Halfway</button>
+    <button role="tab" id="tab-b" aria-controls="panel-b" aria-selected="false" tabindex="-1">Kake udon</button>
+  </div>
+  <div class="tabpanel" role="tabpanel" id="panel-a" aria-labelledby="tab-a" hidden><p class="tabnote">Source document A, as encoded.</p><div class="recipe">Cacio e Pepe (Roman pasta with cheese and black pepper)
+
+A classic recipe of the Roman tradition with only three ingredients. Serves 2.
+
+Ingredients:
+- 200 g spaghetti (or tonnarelli)
+- 100 g Pecorino Romano cheese, finely grated
+- 2 teaspoons whole black peppercorns
+- coarse salt for the pasta water
+
+Preparation:
+1. Toast the black peppercorns in a dry skillet over medium heat until fragrant, then crush them coarsely in a mortar.
+2. Bring a pot of lightly salted water to a boil and cook the spaghetti until one minute short of al dente. Use less water than usual so the cooking water becomes rich in starch.
+3. While the pasta cooks, mix the grated Pecorino Romano with a ladle of the hot, starchy pasta water, stirring vigorously until it forms a thick, smooth cream with no lumps.
+4. Transfer the spaghetti to the skillet with the crushed pepper, add a splash of pasta water, and finish cooking for one minute, tossing constantly.
+5. Off the heat, add the Pecorino cream and toss vigorously, loosening with more pasta water as needed, until every strand is coated in a glossy sauce.
+6. Serve immediately with extra grated Pecorino and a final grind of pepper.</div></div>
+  <div class="tabpanel" role="tabpanel" id="panel-mid" aria-labelledby="tab-mid"><p class="tabnote">Decoded at the midpoint, verbatim. Prompt: “Write out this recipe: give the dish a name, list the ingredients, and describe the preparation steps.”</p><div class="recipe">Recipe Name: Kake Udon with Creamy Parmesan Sauce
+
+Ingredients:
+- 200 g fresh udon noodles
+- 2 tablespoons unsalted butter
+- 2 tablespoons mirin
+- 2 tablespoons soy sauce
+- 1 teaspoon wasabi paste
+- 1/2 cup grated Parmesan cheese
+- 1/2 cup heavy cream
+- 1 spring onion, thinly sliced
+- Optional: a pinch of freshly ground black pepper
+
+Preparation Steps:
+1. Cook the fresh udon noodles according to the package instructions. Drain and rinse with cold water.
+2. In a deep skillet or pan, melt the unsalted butter over medium heat.
+3. Add the mirin and cook fsr 1 minute.
+4. Stir in the soy sauce and wasabi paste.
+5. Gradually add the grated Parmesan cheese, stirring constantly to prevent lumps from forming.
+6. Pour in the heavy cream and bring to a simmer.
+7. Cook for 2 minutes, stirring occasionally, until the sauce has thickened.
+8. Add the cooked udon noodles to the skillet and toss to coat them evenly with the sauce.
+9. Remove from heat and top with the sliced spring onion.
+10. Optional: finish with a pinch of freshly ground black pepper.
+11. Serve immediately.</div></div>
+  <div class="tabpanel" role="tabpanel" id="panel-b" aria-labelledby="tab-b" hidden><p class="tabnote">Source document B, as encoded.</p><div class="recipe">Kake Udon (Japanese udon noodles in hot dashi broth)
+
+A simple and warming Japanese noodle soup built on dashi stock. Serves 2.
+
+Ingredients:
+- 2 portions fresh or frozen udon noodles
+- 600 ml dashi stock (kombu and katsuobushi)
+- 3 tablespoons soy sauce
+- 2 tablespoons mirin
+- 1 teaspoon sugar
+- 2 spring onions, thinly sliced
+- shichimi togarashi (Japanese seven-spice), to taste
+- optional toppings: kamaboko fish cake, tempura flakes (tenkasu), a soft egg
+
+Preparation:
+1. Make the dashi: soak a piece of kombu in cold water for 30 minutes, bring it almost to a boil and remove the kombu, then add a handful of katsuobushi (dried bonito flakes), turn off the heat, let it steep for 2 minutes, and strain.
+2. Season the dashi with the soy sauce, mirin, and sugar, and keep the broth hot over low heat without boiling.
+3. Cook the udon noodles in a separate pot of unsalted boiling water according to the package directions, then drain and rinse briefly to remove surface starch.
+4. Divide the noodles between two deep bowls and ladle the hot seasoned broth over them.
+5. Top with sliced spring onions and any optional toppings, and finish with a pinch of shichimi togarashi. Serve immediately, very hot.</div></div>
+  <figcaption>The two recipes and the dish decoded halfway between them. The pictures are illustrations generated with Gemini from each dish's description. Doc2LoRA produces the text, not the pictures.</figcaption>
+</figure></div>
+</section>
+
+<section id="generate"><div class="wrap">
+  <h2>Map generation results</h2>
+  <p>We evaluated on American Physical Society physics papers labeled by PACS, a hierarchical topic scheme for organizing fields and subfields.</p>
+
+  <h3>Naming groups of papers</h3>
+  <p>For each topic, we averaged paper embeddings and asked the model to generate a 2-3 word label. We compared these outputs to official PACS names and five baselines (including keyword extraction and vector-to-text decoders). Doc2LoRA's labels best matched the official names by word overlap and were preferred in language model panel comparisons.</p>
+</div>
+<div class="wide"><figure>
+  <div class="pair">
+    <img src="figs/fig2a.png" width="778" height="1134" alt="Violin plot of word overlap with the official topic names for seven methods. Doc2LoRA averages .64, ahead of ICAE .57, in-context prompting .50, KeyLLM .31, BERTopic .30, vec2text .30 and T2L .28.">
+    <img src="figs/fig2b.png" width="845" height="967" alt="Heat map of head-to-head win rates between the seven methods, judged by five language models. Doc2LoRA has the highest row mean, .76.">
+  </div>
+  <figcaption><b>Figure 2.</b> Naming 28 physics topics. <b>Left:</b> word overlap between each method's label and the official name (1 = identical). Each dot is a topic; diamond is the mean. <b>Right:</b> panel win rate: how often five language models prefer row over column; 0.5 = tie. D2L: Doc2LoRA; In-ctx: language model receives papers directly; <a href="https://arxiv.org/abs/2307.06945">ICAE</a>; <a href="https://maartengr.github.io/KeyBERT/guides/keyllm.html">KeyLLM</a>; <a href="https://arxiv.org/abs/2203.05794">BERTopic</a>; <a href="https://arxiv.org/abs/2310.06816">vec2text</a>; <a href="https://arxiv.org/abs/2506.06105">T2L</a>: <a href="https://arxiv.org/abs/2506.06105">Text-to-LoRA</a>.</figcaption>
+</figure></div>
+<div class="wrap">
+  <h3>Shorter vectors, broader ideas</h3>
+  <p>Averaging divergent papers shortens the embedding vector. Shorter vectors tend to be more generic, broader categories, and the level of generality can be controlled by shrinking the vector length (right). Shrinking a Wikipedia article's vector shifts its label from <em>Citric acid cycle metabolism</em> to <em>Cellular respiration</em>. Near zero, the model defaults to its base answer.</p>
+</div>
+<div class="wide"><figure>
+  <div class="pair c-d">
+    <img src="figs/fig2c.png" width="1133" height="1079" alt="Averaged vectors of physics topics placed by vector length, in three rows for field, division and subdivision, with decoded labels such as Particle physics, Condensed matter physics and Quantum information.">
+    <img src="figs/fig2d.png" width="1248" height="915" alt="Four Wikipedia articles with their vectors shrunk step by step. Decoded labels become broader as the vector shortens, for example from Citric acid cycle metabolism to Cellular respiration.">
+  </div>
+  <figcaption><b>Figure 3.</b> Shorter vectors make labels broader. <b>Left:</b> Each row shows average vectors for physics topics by hierarchy level; circle size shows number of papers; orange labels are decoded, grey are official where different. <b>Right:</b> Four Wikipedia article vectors are progressively shrunk; labels update at each step. In the shaded region, the base model output appears.</figcaption>
+</figure></div>
+<div class="wrap">
+  <h3>Reading the space between two papers</h3>
+  <p>We interpolated between two physics papers and, at each point, asked the model to write an abstract. Move the slider to shift the weight from paper A to paper B. Doc2LoRA's abstract follows the weight and combines terms from both papers near the switch, while a language model given both papers and the weight in its prompt blends them at every weight.</p>
+</div>
+<div class="wide"><figure>
+  <div class="mixctl">
+    <span class="end a">Paper A</span>
+    <input type="range" id="mixw" min="0" max="12" step="1" value="5" aria-label="Weight on paper B, in twelfths">
+    <span class="end b">Paper B</span>
+    <output id="mixout" for="mixw">Weight on paper B: 5/12</output>
+  </div>
+  <div class="mixgrid">
+    <div><div class="mh">Doc2LoRA</div><div class="mcount" id="cnt-doc2lora"><span class="bar"><i class="ba" style="width:55%"></i><i class="bb" style="width:45%"></i></span><span class="ctext">16 paper-A words · 13 paper-B words</span></div><p class="mt" id="mix-doc2lora">This research investigates the <mark class="a">learning</mark> of <mark class="b">quantum</mark> gates in a <mark class="b">unitary</mark> model of <mark class="b">quantum</mark> computation, where a <mark class="b">quantum</mark> system evolves under a <mark class="b">unitary</mark> transformation and is <mark class="a">trained</mark> using a <mark class="b">quantum</mark> <mark class="a">neural network</mark>. The problem involves determining whether a <mark class="b">quantum</mark> system can <mark class="a">learn</mark> a target <mark class="b">unitary</mark> transformation—possibly imperfect—by iteratively adjusting a set of <mark class="b">quantum</mark> gates, with the goal of achieving a high fidelity of the <mark class="a">learned</mark> transformation. The study employs a <mark class="a">statistical mechanics</mark> approach, specifically the <mark class="a">replica method</mark> and <mark class="a">annealing techniques</mark>, to analyze the <mark class="a">learning</mark> process in the <mark class="a">large-N</mark> limit, where N represents the number of <mark class="b">qubits</mark> in the system. The key finding is that the <mark class="a">learning</mark> process is governed by a critical <mark class="a">temperature</mark> T, and the asymptotic error rate scales as 1/N² for <mark class="a">smooth</mark> <mark class="b">unitaries</mark>, with a universal scaling law that depends on the <mark class="a">smoothness</mark> of the <mark class="b">unitary</mark> transformation. For <mark class="a">nonsmooth</mark> <mark class="b">unitaries</mark>, the error rate can exhibit a more complex, potentially divergent behavior, and the <mark class="a">learning</mark> process may fail to converge to a high-fidelity state.</p></div>
+    <div><div class="mh">In-context</div><div class="mcount" id="cnt-incontext"><span class="bar"><i class="ba" style="width:67%"></i><i class="bb" style="width:33%"></i></span><span class="ctext">29 paper-A words · 14 paper-B words</span></div><p class="mt" id="mix-incontext">This research investigates the <mark class="a">statistical-mechanical</mark> behavior of <mark class="b">quantum</mark> <mark class="a">neural networks</mark> under the influence of both <mark class="a">stochastic</mark> <mark class="a">training</mark> and <mark class="b">quantum</mark> <mark class="b">decoherence</mark>, blending the framework of <mark class="a">learning</mark> from <mark class="a">examples</mark> (A) with the principles of <mark class="b">quantum error correction</mark> (B) in a 58:42 proportion. The central problem is to understand how the <mark class="a">generalization performance</mark> of a <mark class="b">quantum</mark> <mark class="a">neural network</mark>—<mark class="a">trained</mark> on random <mark class="a">examples</mark>—degrades or improves in the presence of arbitrary <mark class="b">decoherence</mark> affecting up to t <mark class="b">qubits</mark>, and whether the <mark class="a">statistical-mechanical</mark> predictions of <mark class="a">generalization curves</mark> (e.g., <mark class="a">inverse power laws</mark> or discontinuous transitions) remain valid in a <mark class="b">quantum</mark> setting. Using <mark class="a">replica theory</mark> and the <mark class="a">annealed approximation</mark>, we analyze the average <mark class="a">generalization error</mark> as a function of <mark class="a">training</mark> <mark class="a">examples</mark> and <mark class="a">network</mark> size, while incorporating <mark class="b">quantum error-correcting codes</mark> that protect the <mark class="b">encoded</mark> information against <mark class="b">decoherence</mark>. Our findings reveal that for <mark class="a">realizable</mark> <mark class="a">learning</mark> tasks, the <mark class="a">high-temperature</mark> and <mark class="a">annealed approximations</mark> still provide accurate descriptions of <mark class="a">generalization</mark>, even when <mark class="b">quantum</mark> noise is present, but for <mark class="a">unrealizable</mark> rules, the system exhibits a phase transition to a <mark class="a">spin-glass</mark>-like state with degenerate minima, analogous to classical <mark class="a">perceptrons</mark>, yet now stabilized by <mark class="b">quantum error correction</mark>. We propose a classification of asymptotic <mark class="a">learning curves</mark> in <mark class="b">quantum</mark> <mark class="a">neural networks</mark>, showing that the…</p></div>
+  </div>
+  <figcaption><b>Table 1.</b> Abstracts decoded along the path from paper A, <a href="https://doi.org/10.1103/PhysRevA.45.6056"><em>Statistical mechanics of learning from examples</em></a>, to paper B, <a href="https://doi.org/10.1103/PhysRevA.54.1098"><em>Good quantum error-correcting codes exist</em></a>, two papers from the same physics subtopic. Each cell shows the full decoded abstract; “…” marks where in-context prompting reached the length limit. Words that appear in only one of the two source abstracts are highlighted: paper A’s in <mark class="a">blue</mark>, paper B’s in <mark class="b">orange</mark>. The bar above each column shows their ratio. In-context: a language model given both papers and the mixing weight in its prompt.</figcaption>
+  <script type="application/json" id="mixdata">{"doc2lora": [{"h": "This research investigates the <mark class=\"a\">learning<\/mark> of real-valued functions in <mark class=\"a\">feedforward<\/mark> <mark class=\"a\">networks<\/mark> using a <mark class=\"a\">statistical-mechanical<\/mark> approach, focusing on the <mark class=\"a\">generalization error<\/mark> as a function of the number of available <mark class=\"a\">examples<\/mark>. By modeling the <mark class=\"a\">network<\/mark> as a system with a <mark class=\"a\">temperature<\/mark> parameter and applying the <mark class=\"a\">replica method<\/mark> to handle the high-dimensional limit, the study derives an asymptotic expression for the <mark class=\"a\">generalization error<\/mark>, showing that it scales as $ N^{-1} $ for <mark class=\"a\">smooth<\/mark> <mark class=\"a\">networks<\/mark>, where $ N $ is the number of <mark class=\"a\">examples<\/mark>. For <mark class=\"a\">nonsmooth<\/mark> <mark class=\"a\">networks<\/mark>, the error exhibits a more complex behavior, with a transition from monotonically decreasing to monotonically increasing <mark class=\"a\">generalization curves<\/mark>, indicating a potential phase transition in <mark class=\"a\">learning<\/mark> dynamics. The results reveal that real-valued <mark class=\"a\">networks<\/mark> can <mark class=\"a\">learn<\/mark> both <mark class=\"a\">realizable<\/mark> and <mark class=\"a\">unrealizable<\/mark> functions, with the latter requiring careful analysis due to the breakdown of the <mark class=\"a\">annealing approximation<\/mark> in <mark class=\"a\">nonsmooth<\/mark> cases. These findings provide deep insights into the statistical behavior of <mark class=\"a\">neural networks<\/mark> and highlight the importance of <mark class=\"a\">network<\/mark> <mark class=\"a\">smoothness<\/mark> and <mark class=\"a\">training<\/mark> dynamics in <mark class=\"a\">generalization performance<\/mark>.", "a": 28, "b": 0}, {"h": "This research investigates the <mark class=\"a\">learning<\/mark> of real-valued functions in <mark class=\"a\">neural networks<\/mark> using a <mark class=\"a\">statistical-mechanical<\/mark> approach, focusing on the <mark class=\"a\">generalization error<\/mark> as a function of the number of available <mark class=\"a\">examples<\/mark>. The problem involves understanding how well a <mark class=\"a\">neural network<\/mark> can <mark class=\"a\">generalize<\/mark> from a finite <mark class=\"a\">training<\/mark> set to unseen data, particularly in the presence of noise and model structure. Using the <mark class=\"a\">replica method<\/mark> and <mark class=\"a\">annealing techniques<\/mark>, the study derives an asymptotic expression for the <mark class=\"a\">generalization error<\/mark>, showing that for <mark class=\"a\">smooth<\/mark> <mark class=\"a\">networks<\/mark>, the error decays as $ \\mathcal{O}(N^{-1/2}) $, where $ N $ is the number of <mark class=\"a\">examples<\/mark>. In contrast, for <mark class=\"a\">nonsmooth<\/mark> <mark class=\"a\">networks<\/mark>, the error can exhibit a transition from monotonically decreasing to monotonically increasing behavior, indicating a potential loss of <mark class=\"a\">learning<\/mark> capability. These findings highlight the critical role of <mark class=\"a\">network<\/mark> <mark class=\"a\">smoothness<\/mark> and the structure of the <mark class=\"a\">learning<\/mark> problem in determining <mark class=\"a\">generalization performance<\/mark>.", "a": 21, "b": 0}, {"h": "This research investigates the <mark class=\"a\">learning<\/mark> of real-valued functions in <mark class=\"a\">neural networks<\/mark> using a <mark class=\"a\">statistical-mechanical<\/mark> framework, focusing on the <mark class=\"a\">generalization error<\/mark> as a function of the number of available <mark class=\"a\">examples<\/mark>. The problem involves understanding how well a <mark class=\"a\">neural network<\/mark> can <mark class=\"a\">generalize<\/mark> from a finite <mark class=\"a\">training<\/mark> set to unseen data, particularly in the presence of noise and model structure. Using the <mark class=\"a\">replica method<\/mark> and <mark class=\"a\">annealing techniques<\/mark>, the study derives an asymptotic expression for the <mark class=\"a\">generalization error<\/mark>, showing that for <mark class=\"a\">smooth<\/mark> <mark class=\"a\">networks<\/mark>, the error decays as $ \\mathcal{O}(N^{-1/2}) $, where $ N $ is the number of <mark class=\"a\">examples<\/mark>. In contrast, for <mark class=\"a\">nonsmooth<\/mark> <mark class=\"a\">networks<\/mark>, the error can exhibit a monotonically increasing trend, and in some cases, a phase transition occurs where the <mark class=\"a\">network<\/mark> fails to <mark class=\"a\">learn<\/mark> despite being able to <mark class=\"a\">learn<\/mark> <mark class=\"a\">smooth<\/mark> functions. These findings highlight the critical role of <mark class=\"a\">network<\/mark> <mark class=\"a\">smoothness<\/mark> and the limitations of <mark class=\"a\">learning<\/mark> in high-dimensional, noisy environments.", "a": 23, "b": 0}, {"h": "This research investigates the <mark class=\"a\">learning<\/mark> of real-valued functions in <mark class=\"a\">neural networks<\/mark> using a <mark class=\"a\">statistical-mechanical<\/mark> framework, focusing on the <mark class=\"a\">generalization error<\/mark> of <mark class=\"a\">trained<\/mark> <mark class=\"a\">networks<\/mark>. The problem involves understanding how well a <mark class=\"a\">network<\/mark> can <mark class=\"a\">generalize<\/mark> from a finite <mark class=\"a\">training<\/mark> set to unseen data, particularly in the presence of noise and model limitations. Using a transfer-matrix approach and the <mark class=\"a\">replica method<\/mark>, the study derives an asymptotic expression for the <mark class=\"a\">generalization error<\/mark> as a function of the number of <mark class=\"a\">training<\/mark> samples $ N $, showing that it scales as $ \\alpha N^{-1} $ for <mark class=\"a\">smooth<\/mark> <mark class=\"a\">networks<\/mark>, where $ \\alpha $ is a constant. For <mark class=\"a\">nonsmooth<\/mark> <mark class=\"a\">networks<\/mark>, the error exhibits a more complex behavior, with a transition from monotonically decreasing to <mark class=\"a\">nonsmooth<\/mark> monotonic error curves, and in some cases, a sudden switch from a state of <mark class=\"a\">learning<\/mark> to a state of perfect <mark class=\"a\">generalization<\/mark>. These findings reveal that the structure of the <mark class=\"a\">network<\/mark> and the nature of the function being <mark class=\"a\">learned<\/mark> significantly influence the <mark class=\"a\">generalization performance<\/mark>.", "a": 22, "b": 0}, {"h": "This research investigates the <mark class=\"a\">learning<\/mark> of <mark class=\"b\">quantum<\/mark> and classical <mark class=\"a\">networks<\/mark> in the context of statistical <mark class=\"a\">learning<\/mark> theory, focusing on the asymptotic behavior of the <mark class=\"a\">generalization error<\/mark> as the number of <mark class=\"a\">training<\/mark> samples grows. The problem involves determining whether a <mark class=\"a\">network<\/mark> can accurately approximate a given <mark class=\"a\">target function<\/mark>—whether <mark class=\"a\">realizable<\/mark> or <mark class=\"a\">unrealizable<\/mark>—by analyzing the relationship between the number of samples $ N $, the <mark class=\"a\">network<\/mark>'s representational capacity (modeled as a <mark class=\"b\">unitary<\/mark> transformation), and the resulting <mark class=\"a\">generalization error<\/mark> $ \\epsilon $. Using a <mark class=\"a\">statistical mechanics<\/mark> approach, the study derives a <mark class=\"a\">generalization error<\/mark> curve that depends on the <mark class=\"a\">network<\/mark>'s <mark class=\"a\">smoothness<\/mark> and the structure of the <mark class=\"a\">target function<\/mark>, showing that for <mark class=\"a\">smooth<\/mark> <mark class=\"a\">networks<\/mark>, the error decays as $ \\epsilon \\sim \\sqrt{N^{-1} \\log N} $, while for <mark class=\"a\">nonsmooth<\/mark> functions, the decay can be slower or even exhibit a phase transition. The research also introduces a <mark class=\"a\">replica method<\/mark> and <mark class=\"a\">annealing techniques<\/mark> to analyze the high-dimensional limit of the problem, revealing that the error can increase in certain regimes, particularly when the <mark class=\"a\">target function<\/mark> is <mark class=\"a\">nonsmooth<\/mark> or the <mark class=\"a\">network<\/mark> is in a phase transition region. These findings provide a deeper understanding of the conditions under which <mark class=\"b\">quantum<\/mark> and classical <mark class=\"a\">networks<\/mark> can reliably <mark class=\"a\">learn<\/mark> and <mark class=\"a\">generalize<\/mark> from data.", "a": 27, "b": 3}, {"h": "This research investigates the <mark class=\"a\">learning<\/mark> of <mark class=\"b\">quantum<\/mark> gates in a <mark class=\"b\">unitary<\/mark> model of <mark class=\"b\">quantum<\/mark> computation, where a <mark class=\"b\">quantum<\/mark> system evolves under a <mark class=\"b\">unitary<\/mark> transformation and is <mark class=\"a\">trained<\/mark> using a <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural network<\/mark>. The problem involves determining whether a <mark class=\"b\">quantum<\/mark> system can <mark class=\"a\">learn<\/mark> a target <mark class=\"b\">unitary<\/mark> transformation—possibly imperfect—by iteratively adjusting a set of <mark class=\"b\">quantum<\/mark> gates, with the goal of achieving a high fidelity of the <mark class=\"a\">learned<\/mark> transformation. The study employs a <mark class=\"a\">statistical mechanics<\/mark> approach, specifically the <mark class=\"a\">replica method<\/mark> and <mark class=\"a\">annealing techniques<\/mark>, to analyze the <mark class=\"a\">learning<\/mark> process in the <mark class=\"a\">large-N<\/mark> limit, where N represents the number of <mark class=\"b\">qubits<\/mark> in the system. The key finding is that the <mark class=\"a\">learning<\/mark> process is governed by a critical <mark class=\"a\">temperature<\/mark> T, and the asymptotic error rate scales as 1/N² for <mark class=\"a\">smooth<\/mark> <mark class=\"b\">unitaries<\/mark>, with a universal scaling law that depends on the <mark class=\"a\">smoothness<\/mark> of the <mark class=\"b\">unitary<\/mark> transformation. For <mark class=\"a\">nonsmooth<\/mark> <mark class=\"b\">unitaries<\/mark>, the error rate can exhibit a more complex, potentially divergent behavior, and the <mark class=\"a\">learning<\/mark> process may fail to converge to a high-fidelity state.", "a": 16, "b": 13}, {"h": "This research investigates the existence and properties of <mark class=\"b\">quantum error-correcting codes<\/mark> in the context of <mark class=\"b\">quantum<\/mark> computing, focusing on the asymptotic behavior of the <mark class=\"b\">quantum error-correcting code<\/mark> (<mark class=\"b\">QEC<\/mark>) as the number of <mark class=\"b\">qubits<\/mark> grows. The problem centers on determining whether a <mark class=\"b\">quantum<\/mark> system can reliably <mark class=\"b\">reconstruct<\/mark> a stored <mark class=\"b\">quantum<\/mark> state—<mark class=\"b\">encoded<\/mark> as a <mark class=\"b\">unitary<\/mark> transformation—despite the presence of errors, particularly in the case of non-uniform or non-reversible errors. Using a <mark class=\"b\">unitary<\/mark> mapping approach, the study derives a general asymptotic formula for the error rate, showing that the threshold for successful <mark class=\"b\">error correction<\/mark> is inversely proportional to the square root of the number of <mark class=\"b\">qubits<\/mark>, specifically $ \\epsilon \\sim -\\frac{2\\alpha}{n} $, where $ \\alpha $ is the error rate per <mark class=\"b\">qubit<\/mark> and $ n $ is the number of <mark class=\"b\">qubits<\/mark>. The research establishes that for certain classes of errors, such as those that are not uniformly distributed or not invertible, the threshold can be higher, and in some cases, the error rate can be bounded above by a function of the error rate per <mark class=\"b\">qubit<\/mark>. These findings provide a theoretical foundation for the design and scalability of <mark class=\"b\">quantum error-correcting codes<\/mark> in practical <mark class=\"b\">quantum<\/mark> computing systems.", "a": 0, "b": 18}, {"h": "This research investigates the existence and properties of <mark class=\"b\">quantum error-correcting codes<\/mark> that can reliably protect <mark class=\"b\">quantum<\/mark> information against errors in a noisy environment. The problem centers on determining whether a <mark class=\"b\">quantum<\/mark> system can maintain <mark class=\"b\">coherence<\/mark> and correct errors when subjected to arbitrary <mark class=\"b\">decoherence<\/mark>, even when the errors are not perfectly correlated or symmetric. Using a <mark class=\"b\">unitary<\/mark> mapping approach, the study models the <mark class=\"b\">quantum<\/mark> system as a state evolving under a <mark class=\"a\">stochastic<\/mark> process governed by a <mark class=\"b\">quantum<\/mark> channel, and analyzes the conditions under which the system can recover its original state. The key finding is that such <mark class=\"b\">codes<\/mark> exist for any <mark class=\"b\">quantum<\/mark> system with a finite number of <mark class=\"b\">qubits<\/mark>, and their performance is characterized by a threshold rate $ k/N \\sim -\\log_2(2p)/(2p - 1) $, where $ p $ is the error probability, under the assumption of <mark class=\"a\">smooth<\/mark> error evolution. This result provides a fundamental limit on the efficiency of <mark class=\"b\">quantum error correction<\/mark> and highlights the importance of error structure in determining the feasibility of reliable <mark class=\"b\">quantum<\/mark> computation.", "a": 2, "b": 13}, {"h": "This research investigates the existence and properties of <mark class=\"b\">quantum error-correcting codes<\/mark> that can reliably protect <mark class=\"b\">quantum<\/mark> information against errors during transmission. The problem centers on determining whether a <mark class=\"b\">quantum<\/mark> system can maintain <mark class=\"b\">coherence<\/mark> and correct errors—such as bit flips or phase flips—when subjected to noise, even when the errors are not perfectly correlated or localized. Using a <mark class=\"b\">unitary<\/mark> <mark class=\"b\">encoding<\/mark> and decoding framework, the study establishes that such <mark class=\"b\">codes<\/mark> exist for any given <mark class=\"b\">quantum<\/mark> state and can correct up to $ t $ errors in a <mark class=\"b\">subspace<\/mark> of dimension $ 2^n $, with a success probability approaching 1 as the system size grows. The key finding is that the asymptotic rate of these <mark class=\"b\">codes<\/mark> scales as $ k/n \\approx 1 - \\frac{2H_p}{2^n - 1} $, where $ H_p $ is the <mark class=\"b\">binary entropy<\/mark> of the error probability $ p $, and this rate is bounded above by $ 1 - \\frac{2H_p}{2^n - 1} $, providing a fundamental limit on <mark class=\"b\">error correction<\/mark> efficiency. These results are derived through asymptotic analysis of the <mark class=\"b\">quantum<\/mark> channel's behavior under random noise, offering both theoretical insight and practical implications for scalable <mark class=\"b\">quantum<\/mark> computing.", "a": 0, "b": 14}, {"h": "This research topic investigates the existence and properties of <mark class=\"b\">quantum error-correcting codes<\/mark>, which are essential for protecting <mark class=\"b\">quantum<\/mark> information from <mark class=\"b\">decoherence<\/mark>. The problem is to determine whether, given a <mark class=\"b\">quantum<\/mark> system of <mark class=\"b\">qubits<\/mark>, there exists a <mark class=\"b\">unitary<\/mark> <mark class=\"b\">encoding<\/mark> (<mark class=\"b\">quantum<\/mark> map) that transforms a k-<mark class=\"b\">qubit<\/mark> state into a <mark class=\"b\">subspace<\/mark> of an n-<mark class=\"b\">qubit<\/mark> system such that any t-<mark class=\"b\">qubit<\/mark> error—regardless of its nature or whether it occurs independently—can be corrected, allowing the original state to be perfectly <mark class=\"b\">reconstructed<\/mark>. The study employs asymptotic analysis to derive a lower bound on the <mark class=\"b\">code<\/mark> rate, showing that for large systems, the rate approaches $ \\frac{k}{n} \\geq 1 - \\frac{2t}{2^n - 1} $, where $ t $ is the maximum number of <mark class=\"b\">qubits<\/mark> that can be affected. This result is derived using the theory of <mark class=\"b\">quantum<\/mark> channels and the structure of <mark class=\"b\">quantum<\/mark> states, and it establishes a fundamental limit on the efficiency of <mark class=\"b\">quantum error correction<\/mark>. The findings provide a theoretical foundation for the design of scalable <mark class=\"b\">quantum error-correcting codes<\/mark>, crucial for the development of fault-tolerant <mark class=\"b\">quantum<\/mark> computers.", "a": 0, "b": 20}, {"h": "This research topic investigates the existence and properties of <mark class=\"b\">quantum error-correcting codes<\/mark>, which are essential for protecting <mark class=\"b\">quantum<\/mark> information from <mark class=\"b\">decoherence<\/mark>. The problem is to determine whether, given a <mark class=\"b\">quantum<\/mark> system of $ n $ <mark class=\"b\">qubits<\/mark>, there exists a <mark class=\"b\">unitary<\/mark> <mark class=\"b\">encoding<\/mark> (<mark class=\"b\">quantum<\/mark> map) that transforms $ k $ <mark class=\"b\">qubits<\/mark> into a <mark class=\"b\">subspace<\/mark> of $ 2^n $ <mark class=\"b\">qubits<\/mark> such that any $ t $ <mark class=\"b\">qubits<\/mark> undergoing arbitrary <mark class=\"b\">decoherence<\/mark> can be corrected, allowing the original $ k $ <mark class=\"b\">qubits<\/mark> to be perfectly <mark class=\"b\">reconstructed<\/mark>. The study establishes that such <mark class=\"b\">codes<\/mark> exist with a rate of $ k/n \\approx 1 - 2H_2(t/n) $, where $ H_2(x) $ is the <mark class=\"b\">binary entropy<\/mark> function, and provides <mark class=\"b\">upper bounds<\/mark> on this rate. The methods involve analyzing the structure of <mark class=\"b\">quantum<\/mark> maps and the conditions under which the <mark class=\"b\">encoded<\/mark> state remains recoverable despite noise. These findings are foundational for the development of fault-tolerant <mark class=\"b\">quantum<\/mark> computing.", "a": 0, "b": 21}, {"h": "This research topic investigates the existence and properties of <mark class=\"b\">quantum error-correcting codes<\/mark>, which are essential for protecting <mark class=\"b\">quantum<\/mark> information from <mark class=\"b\">decoherence<\/mark>. The problem is to determine whether, given a <mark class=\"b\">quantum<\/mark> system of $ n $ <mark class=\"b\">qubits<\/mark>, there exists a <mark class=\"b\">unitary<\/mark> <mark class=\"b\">encoding<\/mark> (<mark class=\"b\">quantum<\/mark> gate) that maps $ k $ <mark class=\"b\">qubits<\/mark> into a <mark class=\"b\">subspace<\/mark> of $ 2^n $ states such that any $ t $ <mark class=\"b\">qubits<\/mark> undergoing arbitrary <mark class=\"b\">decoherence<\/mark> can be corrected, allowing the original $ k $ <mark class=\"b\">qubits<\/mark> to be perfectly <mark class=\"b\">reconstructed<\/mark>. The key finding is that such <mark class=\"b\">codes<\/mark> exist with a rate $ R = k/n $ approaching $ 1 - 2H_2(t/n) $, where $ H_2(x) $ is the <mark class=\"b\">binary entropy<\/mark> function, and this bound is tight. The method involves analyzing the structure of <mark class=\"b\">quantum<\/mark> <mark class=\"b\">codes<\/mark> using linear algebra and information theory, establishing a fundamental limit on the efficiency of <mark class=\"b\">quantum error correction<\/mark>. This result provides a theoretical foundation for the design of scalable <mark class=\"b\">quantum<\/mark> computers.", "a": 0, "b": 20}, {"h": "This research topic investigates the existence and properties of <mark class=\"b\">quantum error-correcting codes<\/mark>, which are essential for protecting <mark class=\"b\">quantum<\/mark> information from <mark class=\"b\">decoherence<\/mark>. The problem is to determine whether, given a <mark class=\"b\">quantum<\/mark> system of $ n $ <mark class=\"b\">qubits<\/mark>, there exists a <mark class=\"b\">unitary<\/mark> <mark class=\"b\">encoding<\/mark> (<mark class=\"b\">quantum<\/mark> gate) that maps $ k $ <mark class=\"b\">qubits<\/mark> into a larger <mark class=\"b\">subspace<\/mark> of $ 2^n $ <mark class=\"b\">qubits<\/mark> such that any $ t $ <mark class=\"b\">qubits<\/mark> undergoing arbitrary <mark class=\"b\">decoherence<\/mark> can be corrected by measuring the resulting state. The key finding is that such <mark class=\"b\">codes<\/mark> exist with a rate of $ k/n \\approx 1 - 2t / \\log_2(2t + 1) $, which provides a fundamental limit on the efficiency of <mark class=\"b\">quantum error correction<\/mark>. This result is derived using asymptotic analysis and bounds on the minimum distance of <mark class=\"b\">quantum<\/mark> <mark class=\"b\">codes<\/mark>, showing that the rate approaches 1 as $ t $ grows slowly relative to $ n $. The work establishes a theoretical foundation for scalable <mark class=\"b\">quantum<\/mark> computing by demonstrating that high-fidelity <mark class=\"b\">quantum<\/mark> information can be preserved even in the presence of noise.", "a": 0, "b": 19}], "incontext": [{"h": "This research investigates the <mark class=\"a\">statistical mechanics of learning<\/mark> in <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark>, where the weights of a <mark class=\"a\">feedforward<\/mark> <mark class=\"a\">network<\/mark> are constrained by <mark class=\"b\">quantum<\/mark> superposition and entanglement, leading to a non-classical landscape of energy states. The problem centers on understanding how the <mark class=\"a\">generalization performance<\/mark> of such <mark class=\"a\">networks<\/mark>—particularly in the presence of <mark class=\"a\">quenched disorder<\/mark> from random <mark class=\"a\">training<\/mark> data—scales with the number of <mark class=\"a\">training<\/mark> <mark class=\"a\">examples<\/mark>, using a <mark class=\"a\">statistical-mechanical<\/mark> framework analogous to that in classical <mark class=\"a\">perceptron<\/mark> <mark class=\"a\">learning<\/mark>. By extending the <mark class=\"a\">replica theory<\/mark> to <mark class=\"b\">quantum<\/mark> systems with continuous weight distributions and <mark class=\"a\">smooth<\/mark> <mark class=\"a\">transfer functions<\/mark>, we derive the asymptotic form of the <mark class=\"a\">generalization error<\/mark> as a function of <mark class=\"a\">training<\/mark> size, showing that for <mark class=\"a\">realizable<\/mark> rules, the error decays as a <mark class=\"a\">power law<\/mark> with a scaling exponent determined by the <mark class=\"a\">network<\/mark>'s architecture and the dimensionality of the weight space. Our analysis reveals that <mark class=\"b\">quantum<\/mark> <mark class=\"b\">coherence<\/mark> and entanglement can suppress the emergence of <mark class=\"a\">spin-glass<\/mark> phases typically observed in classical <mark class=\"a\">nonsmooth<\/mark> <mark class=\"a\">networks<\/mark>, leading to smoother <mark class=\"a\">learning<\/mark> transitions and improved <mark class=\"a\">generalization<\/mark>. These findings provide a foundation for designing <mark class=\"b\">quantum<\/mark> machine <mark class=\"a\">learning<\/mark> models with provably better <mark class=\"a\">generalization<\/mark> properties in the <mark class=\"a\">large-N<\/mark> limit.", "a": 29, "b": 6}, {"h": "This research investigates the <mark class=\"a\">statistical-mechanical<\/mark> behavior of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark> <mark class=\"a\">trained<\/mark> on <mark class=\"a\">realizable<\/mark> <mark class=\"a\">learning<\/mark> tasks, blending the <mark class=\"a\">statistical mechanics of learning from examples<\/mark> (A) with a foundational aspect of <mark class=\"b\">quantum error correction<\/mark> (B) in a 92:8 proportion. The central problem is to understand how <mark class=\"b\">quantum error correction<\/mark>—specifically, the ability to preserve <mark class=\"b\">quantum<\/mark> information despite <mark class=\"b\">decoherence<\/mark>—impacts the <mark class=\"a\">generalization performance<\/mark> of <mark class=\"a\">neural networks<\/mark> in the presence of <mark class=\"a\">quenched disorder<\/mark> and <mark class=\"a\">stochastic<\/mark> <mark class=\"a\">training<\/mark> dynamics. Using <mark class=\"a\">replica theory<\/mark> and <mark class=\"a\">high-temperature<\/mark> approximations, we model the <mark class=\"a\">learning<\/mark> process of a <mark class=\"b\">quantum<\/mark> <mark class=\"a\">feedforward<\/mark> <mark class=\"a\">network<\/mark> where the <mark class=\"b\">encoding<\/mark> of k <mark class=\"b\">qubits<\/mark> into an n-<mark class=\"b\">qubit<\/mark> Hilbert space is subject to arbitrary <mark class=\"b\">decoherence<\/mark> in up to t <mark class=\"b\">qubits<\/mark>, and the <mark class=\"a\">network<\/mark> <mark class=\"a\">learns<\/mark> a <mark class=\"a\">realizable<\/mark> <mark class=\"a\">target rule<\/mark> from a set of randomly sampled <mark class=\"a\">examples<\/mark>. We find that the <mark class=\"a\">generalization error<\/mark> scales as αN, with the scaling exponent α determined by both the <mark class=\"a\">network<\/mark> architecture and the <mark class=\"b\">quantum error-correcting<\/mark> capacity, and that the presence of <mark class=\"b\">error correction<\/mark> can suppress the emergence of <mark class=\"a\">spin-glass<\/mark> phases in the <mark class=\"a\">learning<\/mark> dynamics. Our results show that <mark class=\"b\">quantum error correction<\/mark> effectively stabilizes the <mark class=\"a\">network<\/mark>'s weight distribution, leading to smoother <mark class=\"a\">generalization curves<\/mark> and improved performance in the <mark class=\"a\">high-temperature<\/mark> limit, suggesting a deep connection between fault tolerance and <mark class=\"a\">learning<\/mark> robustness in…", "a": 29, "b": 14}, {"h": "This research investigates the <mark class=\"a\">statistical-mechanical<\/mark> behavior of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark> <mark class=\"a\">trained<\/mark> on <mark class=\"a\">realizable<\/mark> and <mark class=\"a\">unrealizable<\/mark> <mark class=\"a\">target rules<\/mark>, blending the <mark class=\"a\">statistical mechanics of learning from examples<\/mark> (A) with the principles of <mark class=\"b\">quantum error correction<\/mark> (B) in a 83:17 proportion. The central problem is to understand how <mark class=\"a\">quenched disorder<\/mark>—arising from both random <mark class=\"a\">training<\/mark> data and <mark class=\"b\">quantum<\/mark> <mark class=\"b\">decoherence<\/mark>—impacts the <mark class=\"a\">generalization performance<\/mark> of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark>, particularly in the presence of noise and limited <mark class=\"b\">error-correcting<\/mark> capacity. Using <mark class=\"a\">replica theory<\/mark> and <mark class=\"a\">high-temperature<\/mark>/<mark class=\"a\">annealed approximations<\/mark> adapted to <mark class=\"b\">quantum<\/mark> systems, we derive the asymptotic scaling of <mark class=\"a\">generalization error<\/mark> with <mark class=\"a\">training<\/mark> <mark class=\"a\">examples<\/mark>, showing that for <mark class=\"a\">realizable<\/mark> rules, the error decays as $ \\epsilon_g \\sim P^{-\\alpha} $, where $ P $ is the number of <mark class=\"a\">training<\/mark> samples, while for <mark class=\"a\">unrealizable<\/mark> rules, the error exhibits non-monotonic behavior and may exhibit <mark class=\"a\">spin-glass<\/mark>-like phase transitions. Crucially, we demonstrate that <mark class=\"b\">quantum error-correcting codes<\/mark> with rate $ k/n = 1 - 2H(2t/n) $ can stabilize <mark class=\"a\">learning<\/mark> by suppressing the impact of <mark class=\"b\">decoherence<\/mark>-induced disorder, effectively enabling robust <mark class=\"a\">generalization<\/mark> even in the presence of noise. Our findings suggest that the interplay between <mark class=\"b\">quantum error correction<\/mark>…", "a": 23, "b": 10}, {"h": "This research investigates the <mark class=\"a\">statistical-mechanical<\/mark> behavior of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark> under the influence of both <mark class=\"a\">stochastic<\/mark> <mark class=\"a\">learning<\/mark> dynamics and <mark class=\"b\">quantum<\/mark> <mark class=\"b\">decoherence<\/mark>, blending the <mark class=\"a\">statistical mechanics of learning from examples<\/mark> (A:75%) with the principles of <mark class=\"b\">quantum error correction<\/mark> (B:25%). The central problem is to understand how the <mark class=\"a\">generalization performance<\/mark> of a <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural network<\/mark>—<mark class=\"a\">trained<\/mark> on random <mark class=\"a\">examples<\/mark>—degrades or improves in the presence of <mark class=\"b\">quantum<\/mark> noise, particularly when the <mark class=\"a\">network<\/mark>'s weights are subject to <mark class=\"a\">quenched disorder<\/mark> and <mark class=\"b\">decoherence<\/mark> from arbitrary errors in up to t <mark class=\"b\">qubits<\/mark>. Using a <mark class=\"a\">replica-based<\/mark> <mark class=\"a\">statistical-mechanical<\/mark> framework, we derive the <mark class=\"a\">generalization error<\/mark> as a function of the number of <mark class=\"a\">training<\/mark> <mark class=\"a\">examples<\/mark> and the <mark class=\"a\">network<\/mark> size, while incorporating <mark class=\"b\">quantum error-correcting codes<\/mark> to protect the <mark class=\"b\">encoded<\/mark> information against <mark class=\"b\">decoherence<\/mark>. We find that for <mark class=\"a\">realizable<\/mark> <mark class=\"a\">learning<\/mark> tasks, the <mark class=\"a\">high-temperature<\/mark> and <mark class=\"a\">annealed approximations<\/mark> accurately predict the <mark class=\"a\">generalization curve<\/mark>, but only when the <mark class=\"b\">quantum error-correcting<\/mark> structure maintains a sufficiently large <mark class=\"b\">code<\/mark> distance to suppress noise-induced degradation. In contrast, for <mark class=\"a\">unrealizable<\/mark> rules or when noise exceeds the <mark class=\"b\">error-correcting<\/mark> capacity, the system exhibits a phase transition to a <mark class=\"a\">spin-glass<\/mark>-like state with degenerate minima, where <mark class=\"a\">generalization error<\/mark> becomes non-monotonic and the <mark class=\"a\">network<\/mark> fails to converge, highlighting…", "a": 26, "b": 14}, {"h": "This research investigates the <mark class=\"a\">statistical-mechanical<\/mark> behavior of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark> under the influence of both <mark class=\"a\">stochastic<\/mark> <mark class=\"a\">learning<\/mark> dynamics and <mark class=\"b\">quantum<\/mark> <mark class=\"b\">decoherence<\/mark>, blending the framework of <mark class=\"a\">statistical mechanics of learning<\/mark> (A) with the principles of <mark class=\"b\">quantum error correction<\/mark> (B) in a 67:33 ratio. The central problem is to understand how <mark class=\"b\">quantum error-correcting codes<\/mark>—designed to protect <mark class=\"b\">quantum<\/mark> information from <mark class=\"b\">decoherence<\/mark>—can be leveraged to stabilize the <mark class=\"a\">learning<\/mark> process in <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark>, where <mark class=\"a\">training<\/mark> data introduces <mark class=\"a\">quenched disorder<\/mark> and the <mark class=\"a\">network<\/mark> weights evolve under noisy, <mark class=\"a\">stochastic<\/mark> updates. Using <mark class=\"a\">replica theory<\/mark> and <mark class=\"a\">high-temperature<\/mark> approximations adapted to <mark class=\"b\">quantum<\/mark> systems, we analyze the <mark class=\"a\">generalization error<\/mark> of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">perceptrons<\/mark> <mark class=\"a\">trained<\/mark> on <mark class=\"a\">realizable<\/mark> and <mark class=\"a\">unrealizable<\/mark> rules, while accounting for the presence of <mark class=\"b\">quantum<\/mark> noise and the inherent <mark class=\"b\">error-correcting<\/mark> structure of the <mark class=\"b\">code<\/mark>. We find that <mark class=\"b\">quantum error correction<\/mark> significantly suppresses the emergence of <mark class=\"a\">spin-glass<\/mark> phases and discontinuous <mark class=\"a\">learning<\/mark> transitions in <mark class=\"a\">nonsmooth<\/mark> architectures, leading to smoother <mark class=\"a\">generalization curves<\/mark> that asymptotically follow <mark class=\"a\">inverse power laws<\/mark>, similar to classical <mark class=\"a\">smooth<\/mark> <mark class=\"a\">networks<\/mark>. Our results suggest that the asymptotic rate of <mark class=\"a\">learning<\/mark>—defined by the number of <mark class=\"a\">training<\/mark> <mark class=\"a\">examples<\/mark> required to achieve a given <mark class=\"a\">generalization error<\/mark>—can be bounded by the <mark class=\"b\">quantum error-correcting<\/mark> capacity, with the rate scaling as…", "a": 29, "b": 15}, {"h": "This research investigates the <mark class=\"a\">statistical-mechanical<\/mark> behavior of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark> under the influence of both <mark class=\"a\">stochastic<\/mark> <mark class=\"a\">training<\/mark> and <mark class=\"b\">quantum<\/mark> <mark class=\"b\">decoherence<\/mark>, blending the framework of <mark class=\"a\">learning<\/mark> from <mark class=\"a\">examples<\/mark> (A) with the principles of <mark class=\"b\">quantum error correction<\/mark> (B) in a 58:42 proportion. The central problem is to understand how the <mark class=\"a\">generalization performance<\/mark> of a <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural network<\/mark>—<mark class=\"a\">trained<\/mark> on random <mark class=\"a\">examples<\/mark>—degrades or improves in the presence of arbitrary <mark class=\"b\">decoherence<\/mark> affecting up to t <mark class=\"b\">qubits<\/mark>, and whether the <mark class=\"a\">statistical-mechanical<\/mark> predictions of <mark class=\"a\">generalization curves<\/mark> (e.g., <mark class=\"a\">inverse power laws<\/mark> or discontinuous transitions) remain valid in a <mark class=\"b\">quantum<\/mark> setting. Using <mark class=\"a\">replica theory<\/mark> and the <mark class=\"a\">annealed approximation<\/mark>, we analyze the average <mark class=\"a\">generalization error<\/mark> as a function of <mark class=\"a\">training<\/mark> <mark class=\"a\">examples<\/mark> and <mark class=\"a\">network<\/mark> size, while incorporating <mark class=\"b\">quantum error-correcting codes<\/mark> that protect the <mark class=\"b\">encoded<\/mark> information against <mark class=\"b\">decoherence<\/mark>. Our findings reveal that for <mark class=\"a\">realizable<\/mark> <mark class=\"a\">learning<\/mark> tasks, the <mark class=\"a\">high-temperature<\/mark> and <mark class=\"a\">annealed approximations<\/mark> still provide accurate descriptions of <mark class=\"a\">generalization<\/mark>, even when <mark class=\"b\">quantum<\/mark> noise is present, but for <mark class=\"a\">unrealizable<\/mark> rules, the system exhibits a phase transition to a <mark class=\"a\">spin-glass<\/mark>-like state with degenerate minima, analogous to classical <mark class=\"a\">perceptrons<\/mark>, yet now stabilized by <mark class=\"b\">quantum error correction<\/mark>. We propose a classification of asymptotic <mark class=\"a\">learning curves<\/mark> in <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark>, showing that the…", "a": 29, "b": 14}, {"h": "This research investigates the <mark class=\"a\">statistical-mechanical<\/mark> behavior of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark> under the influence of both <mark class=\"a\">stochastic<\/mark> <mark class=\"a\">learning<\/mark> dynamics and <mark class=\"b\">quantum<\/mark> <mark class=\"b\">decoherence<\/mark>, blending the <mark class=\"a\">statistical mechanics of learning from examples<\/mark> (A) with the principles of <mark class=\"b\">quantum error correction<\/mark> (B). The central problem is to understand how the <mark class=\"a\">generalization performance<\/mark> of a <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural network<\/mark>—<mark class=\"a\">trained<\/mark> on random <mark class=\"a\">examples<\/mark>—degrades or improves in the presence of <mark class=\"b\">quantum<\/mark> noise, and whether the structure of the <mark class=\"b\">error-correcting code<\/mark> can stabilize <mark class=\"a\">learning<\/mark> by suppressing the effects of <mark class=\"b\">decoherence<\/mark>-induced disorder. Using a <mark class=\"a\">replica-based<\/mark> <mark class=\"a\">statistical-mechanical<\/mark> framework, we model the <mark class=\"a\">training<\/mark> process as a <mark class=\"a\">stochastic<\/mark> optimization over a high-dimensional Hilbert space, where the <mark class=\"a\">quenched disorder<\/mark> from random <mark class=\"a\">examples<\/mark> is coupled to the dynamical noise from <mark class=\"b\">quantum<\/mark> <mark class=\"b\">decoherence<\/mark>. We find that for <mark class=\"a\">realizable<\/mark> <mark class=\"a\">learning<\/mark> tasks, the <mark class=\"a\">generalization error<\/mark> follows an <mark class=\"a\">inverse power-law<\/mark> scaling with <mark class=\"a\">training<\/mark> size, as in classical <mark class=\"a\">perceptrons<\/mark>, but with a modified exponent due to the presence of <mark class=\"b\">quantum<\/mark> noise. Crucially, we show that <mark class=\"b\">quantum error-correcting codes<\/mark> with asymptotic rate $ k/n = 1 - 2H(2t/n) $ can effectively suppress the impact of <mark class=\"b\">decoherence<\/mark>, leading to a more stable and accurate <mark class=\"a\">generalization curve<\/mark>, especially in the high-noise regime. This work establishes a new…", "a": 23, "b": 13}, {"h": "This research investigates the <mark class=\"a\">statistical-mechanical<\/mark> behavior of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark> under the influence of <mark class=\"b\">decoherence<\/mark> and <mark class=\"a\">training<\/mark> dynamics, blending the <mark class=\"a\">statistical mechanics of learning from examples<\/mark> (A) with the principles of <mark class=\"b\">quantum error correction<\/mark> (B) in a 42:58 proportion. The central problem is to understand how <mark class=\"b\">quantum error-correcting codes<\/mark>—designed to protect <mark class=\"b\">quantum<\/mark> information from <mark class=\"b\">decoherence<\/mark>—can be leveraged to stabilize the <mark class=\"a\">learning<\/mark> process in <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark>, where both the weights and the data are subject to noise and disorder. Using a <mark class=\"a\">replica-based<\/mark> <mark class=\"a\">statistical-mechanical<\/mark> framework, we model the <mark class=\"a\">training<\/mark> of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark> with a finite number of parameters, incorporating <mark class=\"a\">quenched disorder<\/mark> from random data and <mark class=\"a\">stochastic<\/mark> <mark class=\"b\">decoherence<\/mark>, and analyze the <mark class=\"a\">generalization error<\/mark> as a function of <mark class=\"a\">training<\/mark> <mark class=\"a\">examples<\/mark> and system size. We find that for <mark class=\"a\">realizable<\/mark> <mark class=\"a\">learning<\/mark> tasks, the <mark class=\"a\">high-temperature<\/mark> and <mark class=\"a\">annealed approximations<\/mark> from classical <mark class=\"a\">statistical mechanics<\/mark> provide useful insights into the <mark class=\"a\">generalization curve<\/mark>, even in the presence of <mark class=\"b\">quantum<\/mark> noise, while for <mark class=\"a\">unrealizable<\/mark> rules, the system exhibits a phase transition to a <mark class=\"a\">spin-glass<\/mark>-like state due to the interplay between <mark class=\"b\">error correction<\/mark> and non-convex energy landscapes. Our results suggest that <mark class=\"b\">quantum error-correcting codes<\/mark> can suppress the detrimental effects of noise-induced metastability, enabling more robust and scalable…", "a": 23, "b": 12}, {"h": "This research investigates the <mark class=\"a\">statistical-mechanical<\/mark> behavior of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark> under the influence of <mark class=\"b\">decoherence<\/mark> and <mark class=\"a\">training<\/mark> dynamics, blending the <mark class=\"a\">statistical mechanics of learning from examples<\/mark> (A) with the principles of <mark class=\"b\">quantum error correction<\/mark> (B) in a 33:67 proportion. The central problem is to understand how <mark class=\"b\">quantum error-correcting codes<\/mark>—designed to protect <mark class=\"b\">quantum<\/mark> information from <mark class=\"b\">decoherence<\/mark>—can be leveraged to stabilize the <mark class=\"a\">learning<\/mark> process in <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark>, where both the weights and the data are subject to noise and disorder. Using a <mark class=\"a\">replica-based<\/mark> <mark class=\"a\">statistical-mechanical<\/mark> framework, we model the <mark class=\"a\">training<\/mark> of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark> with a finite number of parameters, incorporating <mark class=\"a\">quenched disorder<\/mark> from random data and <mark class=\"a\">stochastic<\/mark> <mark class=\"b\">decoherence<\/mark>, and analyze the <mark class=\"a\">generalization error<\/mark> as a function of <mark class=\"a\">training<\/mark> <mark class=\"a\">examples<\/mark> and system size. We find that for <mark class=\"a\">realizable<\/mark> <mark class=\"a\">learning<\/mark> tasks, the <mark class=\"a\">high-temperature<\/mark> and <mark class=\"a\">annealed approximations<\/mark> from classical <mark class=\"a\">statistical mechanics<\/mark> provide useful insights into the <mark class=\"a\">generalization curve<\/mark>, but only when the <mark class=\"b\">quantum error-correcting<\/mark> structure ensures robustness against <mark class=\"b\">decoherence<\/mark>. In contrast, for <mark class=\"a\">unrealizable<\/mark> rules or when <mark class=\"b\">decoherence<\/mark> exceeds a critical threshold, the system exhibits a phase transition to a <mark class=\"a\">spin-glass<\/mark>-like state, where degenerate minima and high energy barriers prevent effective <mark class=\"a\">learning<\/mark>, highlighting the necessity of <mark class=\"b\">error correction<\/mark> for meaningful general…", "a": 24, "b": 13}, {"h": "This research investigates the emergence of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">spin-glass<\/mark> phases in <mark class=\"a\">neural network<\/mark> architectures under the influence of <mark class=\"b\">quantum<\/mark> <mark class=\"b\">decoherence<\/mark>, blending <mark class=\"a\">statistical mechanics of learning<\/mark> (A) with the theory of <mark class=\"b\">quantum error correction<\/mark> (B). The problem lies in understanding how <mark class=\"a\">quenched disorder<\/mark>—arising from random <mark class=\"a\">training<\/mark> data and <mark class=\"a\">network<\/mark> architecture—interacts with <mark class=\"b\">quantum<\/mark> noise to induce phase transitions in the <mark class=\"a\">generalization performance<\/mark> of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">neural networks<\/mark>. Using a <mark class=\"a\">replica-based<\/mark> <mark class=\"a\">statistical-mechanical<\/mark> framework, we model the <mark class=\"a\">learning<\/mark> dynamics of a <mark class=\"b\">quantum<\/mark> <mark class=\"a\">perceptron<\/mark>, where the weights are subject to <mark class=\"b\">quantum<\/mark> fluctuations and <mark class=\"b\">decoherence<\/mark>, and analyze the <mark class=\"a\">generalization error<\/mark> as a function of <mark class=\"a\">training<\/mark> <mark class=\"a\">examples<\/mark> and noise strength. We find that for <mark class=\"a\">unrealizable<\/mark> rules, the system exhibits a discontinuous <mark class=\"a\">learning<\/mark> transition analogous to <mark class=\"a\">spin-glass<\/mark> phase transitions, with the <mark class=\"a\">generalization error<\/mark> showing non-monotonic dependence on <mark class=\"a\">temperature<\/mark> and noise, mirroring the behavior observed in classical spin glasses. Our results suggest that <mark class=\"b\">quantum error-correcting codes<\/mark> can stabilize certain <mark class=\"a\">network<\/mark> states, enabling robust <mark class=\"a\">learning<\/mark> even in the presence of strong <mark class=\"b\">decoherence<\/mark>, and that the asymptotic rate of such <mark class=\"b\">codes<\/mark> is closely tied to the capacity of the <mark class=\"a\">network<\/mark> to <mark class=\"a\">generalize<\/mark> beyond the classical limit. This work establishes a new paradigm where <mark class=\"b\">quantum error correction<\/mark> provides a physical mechanism to suppress degenerate minima and enhance <mark class=\"a\">generalization<\/mark> in disordered…", "a": 25, "b": 13}, {"h": "This research investigates the emergence of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">spin-glass<\/mark> phases in deep <mark class=\"a\">neural networks<\/mark> under the influence of <mark class=\"b\">quantum<\/mark> <mark class=\"b\">decoherence<\/mark>, blending <mark class=\"a\">statistical mechanics of learning<\/mark> (A) with the theory of <mark class=\"b\">quantum error correction<\/mark> (B) in a 17:83 proportion. The central problem is to understand how <mark class=\"a\">quenched disorder<\/mark>—arising from random <mark class=\"a\">training<\/mark> data and <mark class=\"a\">network<\/mark> architecture—interacts with <mark class=\"b\">quantum<\/mark> noise during the <mark class=\"a\">learning<\/mark> process, particularly in multilayer <mark class=\"a\">perceptrons<\/mark> where nonlinearities and weight distributions give rise to degenerate minima. Using a <mark class=\"a\">replica-based<\/mark> <mark class=\"a\">statistical-mechanical<\/mark> framework adapted to <mark class=\"b\">quantum<\/mark> systems, we model the <mark class=\"a\">learning<\/mark> dynamics of <mark class=\"a\">neural networks<\/mark> where <mark class=\"b\">qubits<\/mark> represent <mark class=\"a\">network<\/mark> weights and <mark class=\"b\">quantum<\/mark> <mark class=\"b\">decoherence<\/mark> mimics <mark class=\"a\">stochastic<\/mark> <mark class=\"a\">training<\/mark> noise, leading to a generalized error landscape. We find that for <mark class=\"a\">unrealizable<\/mark> <mark class=\"a\">learning<\/mark> tasks, the system exhibits a genuine <mark class=\"a\">spin-glass<\/mark> phase characterized by high-energy barriers and metastable states, analogous to those in <mark class=\"b\">quantum error-correcting codes<\/mark> with limited fault tolerance. Our results show that the asymptotic <mark class=\"a\">generalization error<\/mark> scales non-monotonically with <mark class=\"a\">training<\/mark> size and <mark class=\"a\">temperature<\/mark>, and that optimal <mark class=\"a\">learning<\/mark> performance is achieved only when the <mark class=\"a\">network<\/mark>'s capacity (measured by the asymptotic rate k/n) matches the <mark class=\"b\">quantum<\/mark> error threshold defined by the <mark class=\"b\">binary entropy<\/mark> function, suggesting a deep connection between classical <mark class=\"a\">learning<\/mark> robustness and…", "a": 24, "b": 12}, {"h": "This research investigates the emergence of <mark class=\"b\">quantum<\/mark> <mark class=\"a\">spin-glass<\/mark> phases in deep <mark class=\"a\">neural networks<\/mark> under the influence of <mark class=\"b\">quantum<\/mark> <mark class=\"b\">decoherence<\/mark>, blending <mark class=\"a\">statistical mechanics of learning<\/mark> (A) with the theory of <mark class=\"b\">quantum error-correcting codes<\/mark> (B) in a 8%:92% proportion. The central problem is to understand how <mark class=\"a\">quenched disorder<\/mark>—arising from random <mark class=\"a\">training<\/mark> data and <mark class=\"a\">network<\/mark> architecture—interacts with <mark class=\"b\">quantum<\/mark> noise during the <mark class=\"a\">learning<\/mark> process, particularly in multilayer <mark class=\"a\">perceptrons<\/mark> where nonlinearities and weight distributions give rise to degenerate minima. Using a <mark class=\"a\">replica-based<\/mark> <mark class=\"a\">statistical-mechanical<\/mark> framework adapted to <mark class=\"b\">quantum<\/mark> systems, we model the <mark class=\"a\">network<\/mark>'s weight space as a <mark class=\"b\">quantum<\/mark> many-body system, where each weight configuration corresponds to a <mark class=\"b\">quantum<\/mark> state subject to <mark class=\"b\">decoherence<\/mark> from environmental noise. We find that for <mark class=\"a\">realizable<\/mark> <mark class=\"a\">learning<\/mark> tasks, the <mark class=\"a\">network<\/mark>'s <mark class=\"a\">generalization error<\/mark> exhibits a phase transition analogous to a <mark class=\"a\">spin-glass<\/mark> transition, where the system transitions from a disordered, high-error state to a well-<mark class=\"a\">generalizing<\/mark> state as the noise level or <mark class=\"a\">temperature<\/mark> is tuned. Crucially, we show that the structure of the <mark class=\"b\">quantum error-correcting code<\/mark>—specifically, the asymptotic rate k/n = 1 − 2H(2t/n)—can be used to characterize the robustness of the <mark class=\"a\">learned<\/mark> state against noise…", "a": 19, "b": 10}, {"h": "This research investigates the emergence of genuine <mark class=\"b\">quantum<\/mark> <mark class=\"a\">spin-glass<\/mark> phases in <mark class=\"b\">quantum error-correcting codes<\/mark> under the influence of <mark class=\"a\">quenched disorder<\/mark> induced by non-ideal, randomly distributed <mark class=\"b\">decoherence<\/mark> events. Drawing from the <mark class=\"a\">statistical-mechanical<\/mark> framework of <mark class=\"a\">perceptron<\/mark> <mark class=\"a\">learning<\/mark>, particularly the <mark class=\"a\">replica theory<\/mark> and the role of <mark class=\"a\">quenched disorder<\/mark> in creating degenerate minima and phase transitions, we analyze how the structure of error patterns—modeled as random, non-independent <mark class=\"b\">decoherence<\/mark> events—can lead to complex energy landscapes in the space of <mark class=\"b\">encoded<\/mark> <mark class=\"b\">quantum<\/mark> states. Using a <mark class=\"a\">statistical-mechanical<\/mark> approach to <mark class=\"b\">quantum<\/mark> information theory, we derive the <mark class=\"a\">generalization error<\/mark> of <mark class=\"b\">quantum<\/mark> <mark class=\"b\">codes<\/mark> as a function of the number of physical <mark class=\"b\">qubits<\/mark>, showing that for certain error models, the error does not monotonically decrease with <mark class=\"b\">code<\/mark> size and instead exhibits a discontinuous transition from poor to perfect <mark class=\"b\">error correction<\/mark>, analogous to the <mark class=\"a\">learning<\/mark> transition in <mark class=\"a\">nonsmooth<\/mark> <mark class=\"a\">neural networks<\/mark>. We find that the asymptotic performance of <mark class=\"b\">quantum<\/mark> <mark class=\"b\">codes<\/mark> is governed by a critical threshold in the error rate, beyond which the system enters a <mark class=\"a\">spin-glass<\/mark> phase characterized by many metastable states and high energy barriers. These findings suggest that the design of robust <mark class=\"b\">quantum error-correcting codes<\/mark> must account for the <mark class=\"a\">statistical mechanics<\/mark> of disorder, and that optimal <mark class=\"b\">codes<\/mark> may not exist in the ideal…", "a": 14, "b": 16}]}</script>
+</figure></div>
+</section>
+
+<section id="search-results"><div class="wrap">
+  <h2>Adding <span class="g">g</span> greatly improves search</h2>
+  <p>Doc2LoRA is designed for text generation, not ranking. Adding a small reversible transform, <span class="g">g</span>, trained on 42,332 citation pairs from <a href="https://openalex.org">OpenAlex</a>, improves its search results to the level of the commonly used text embeddings. <span class="g">g</span> is the only trained part and preserves reversibility, so all points can be decoded as before.</p>
+  <p>We evaluated Doc2LoRA (with and without <span class="g">g</span>) against five common text encoders on 14 benchmarks covering four tasks: next-paper prediction, topic classification, collaboration prediction, and author disambiguation. Without <span class="g">g</span>, Doc2LoRA ranks last. With <span class="g">g</span>, it performs on par with <a href="https://arxiv.org/abs/2509.20354">EmbeddingGemma</a> and <a href="https://arxiv.org/abs/2308.03281">GTE</a>, ahead of <a href="https://arxiv.org/abs/2212.09741">Instructor</a> and <a href="https://arxiv.org/abs/2211.13308">SPECTER2</a>, and behind <a href="https://arxiv.org/abs/1908.10084">SBERT</a>.</p>
+</div>
+<div class="wide"><figure>
+  <div class="legend">
+    <span><i class="sw raw"></i>Doc2LoRA without <span class="g">g</span></span>
+    <span><i class="sw adapted"></i>Doc2LoRA with <span class="g">g</span></span>
+  </div>
+  <div class="legend">
+    <span><svg class="lsw" viewBox="0 0 16 16" aria-hidden="true"><rect x="4.1" y="4.1" width="7.8" height="7.8" fill="#6f6e6a"/></svg><a href="https://arxiv.org/abs/1908.10084">SBERT</a></span>
+    <span><svg class="lsw" viewBox="0 0 16 16" aria-hidden="true"><path d="M8.0,2.5 L13.1,11.7 L2.9,11.7Z" fill="#6f6e6a"/></svg><a href="https://arxiv.org/abs/2308.03281">GTE</a></span>
+    <span><svg class="lsw" viewBox="0 0 16 16" aria-hidden="true"><path d="M8.0,2.5 L13.5,8.0 L8.0,13.5 L2.5,8.0Z" fill="#6f6e6a"/></svg><a href="https://arxiv.org/abs/2509.20354">EmbeddingGemma</a></span>
+    <span><svg class="lsw" viewBox="0 0 16 16" aria-hidden="true"><path d="M8.0,13.5 L13.1,4.3 L2.9,4.3Z" fill="#6f6e6a"/></svg><a href="https://arxiv.org/abs/2212.09741">Instructor</a></span>
+    <span><svg class="lsw" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.9,8.0 H13.1 M8.0,2.9 V13.1" stroke="#6f6e6a" stroke-width="2.4" fill="none"/></svg><a href="https://arxiv.org/abs/2211.13308">SPECTER2</a></span>
+  </div>
+  <p class="swipe">Swipe sideways to see the whole chart.</p>
+  <div class="chartbox"><svg class="chart" viewBox="0 0 720 766" role="img" aria-label="Scores on 14 benchmarks: Doc2LoRA without and with g, against five text encoders (SBERT, GTE, EmbeddingGemma, Instructor, SPECTER2). The full numbers are in the table below.">
+<g transform="translate(0,0)">
+<text x="0" y="18" class="ptitle">Next-paper prediction <tspan class="pmetric">(AUC)</tspan></text>
+<text x="720" y="18" text-anchor="end" class="colhead">gain from g</text>
+<line x1="175.8" y1="28" x2="175.8" y2="128" stroke="#e6e6e6" stroke-width="1"/>
+<text x="175.8" y="146" text-anchor="middle" class="tick">.80</text>
+<line x1="305.3" y1="28" x2="305.3" y2="128" stroke="#e6e6e6" stroke-width="1"/>
+<text x="305.3" y="146" text-anchor="middle" class="tick">.85</text>
+<line x1="434.8" y1="28" x2="434.8" y2="128" stroke="#e6e6e6" stroke-width="1"/>
+<text x="434.8" y="146" text-anchor="middle" class="tick">.90</text>
+<line x1="564.3" y1="28" x2="564.3" y2="128" stroke="#e6e6e6" stroke-width="1"/>
+<text x="564.3" y="146" text-anchor="middle" class="tick">.95</text>
+<line x1="124" y1="128" x2="642" y2="128" stroke="#c3c2b7" stroke-width="1"/>
+<text x="110" y="48.5" text-anchor="end" class="rl">Economics</text>
+<rect x="370.2" y="37" width="165.4" height="14" rx="7" fill="#f0efec"/>
+<g><title>SBERT: .937</title><rect x="526.7" y="40.1" width="7.8" height="7.8" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>GTE: .910</title><path d="M460.7,38.5 L465.8,47.7 L455.6,47.7Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>EmbeddingGemma: .906</title><path d="M450.3,38.5 L455.9,44.0 L450.3,49.5 L444.8,44.0Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>Instructor: .877</title><path d="M375.2,49.5 L380.3,40.3 L370.2,40.3Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>SPECTER2: .903</title><path d="M437.5,44.0 H447.6 M442.6,38.9 V49.1" stroke="#6f6e6a" stroke-width="2.4" fill="none"/></g>
+<line x1="209.5" y1="44" x2="460.7" y2="44" stroke="#eb6834" stroke-width="2" stroke-opacity=".55"/>
+<line x1="206.9" y1="44" x2="212.1" y2="44" stroke="#eb6834" stroke-width="1.2"/>
+<line x1="458.1" y1="44" x2="463.3" y2="44" stroke="#eb6834" stroke-width="1.2"/>
+<g><title>Doc2LoRA without g: .813</title><circle cx="209.5" cy="44" r="5" fill="#fff" stroke="#eb6834" stroke-width="2"/></g>
+<g><title>Doc2LoRA with g: .910</title><circle cx="460.7" cy="44" r="6" fill="#eb6834" stroke="#fff" stroke-width="2"/></g>
+<text x="720" y="48.5" text-anchor="end" class="num gain">+.097</text>
+<text x="110" y="80.5" text-anchor="end" class="rl">Psychology</text>
+<rect x="398.7" y="69" width="136.9" height="14" rx="7" fill="#f0efec"/>
+<g><title>SBERT: .937</title><rect x="526.7" y="72.1" width="7.8" height="7.8" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>GTE: .912</title><path d="M465.9,70.5 L470.9,79.7 L460.8,79.7Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>EmbeddingGemma: .910</title><path d="M460.7,70.5 L466.2,76.0 L460.7,81.5 L455.2,76.0Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>Instructor: .888</title><path d="M403.7,81.5 L408.8,72.3 L398.7,72.3Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>SPECTER2: .908</title><path d="M450.5,76.0 H460.6 M455.5,70.9 V81.1" stroke="#6f6e6a" stroke-width="2.4" fill="none"/></g>
+<line x1="173.2" y1="76" x2="494.4" y2="76" stroke="#eb6834" stroke-width="2" stroke-opacity=".55"/>
+<line x1="170.6" y1="76" x2="175.8" y2="76" stroke="#eb6834" stroke-width="1.2"/>
+<line x1="491.8" y1="76" x2="497.0" y2="76" stroke="#eb6834" stroke-width="1.2"/>
+<g><title>Doc2LoRA without g: .799</title><circle cx="173.2" cy="76" r="5" fill="#fff" stroke="#eb6834" stroke-width="2"/></g>
+<g><title>Doc2LoRA with g: .923</title><circle cx="494.4" cy="76" r="6" fill="#eb6834" stroke="#fff" stroke-width="2"/></g>
+<text x="720" y="80.5" text-anchor="end" class="num gain">+.124</text>
+<text x="110" y="112.5" text-anchor="end" class="rl">Physics</text>
+<rect x="450.5" y="101" width="149.9" height="14" rx="7" fill="#f0efec"/>
+<g><title>SBERT: .956</title><rect x="575.9" y="104.1" width="7.8" height="7.8" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>GTE: .962</title><path d="M595.4,102.5 L600.4,111.7 L590.3,111.7Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>EmbeddingGemma: .947</title><path d="M556.5,102.5 L562.0,108.0 L556.5,113.5 L551.0,108.0Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>Instructor: .908</title><path d="M455.5,113.5 L460.6,104.3 L450.5,104.3Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>SPECTER2: .941</title><path d="M535.9,108.0 H546.0 M541.0,102.9 V113.1" stroke="#6f6e6a" stroke-width="2.4" fill="none"/></g>
+<line x1="383.0" y1="108" x2="585.0" y2="108" stroke="#eb6834" stroke-width="2" stroke-opacity=".55"/>
+<line x1="380.4" y1="108" x2="385.6" y2="108" stroke="#eb6834" stroke-width="1.2"/>
+<line x1="582.4" y1="108" x2="587.6" y2="108" stroke="#eb6834" stroke-width="1.2"/>
+<g><title>Doc2LoRA without g: .880</title><circle cx="383.0" cy="108" r="5" fill="#fff" stroke="#eb6834" stroke-width="2"/></g>
+<g><title>Doc2LoRA with g: .958</title><circle cx="585.0" cy="108" r="6" fill="#eb6834" stroke="#fff" stroke-width="2"/></g>
+<text x="720" y="112.5" text-anchor="end" class="num gain">+.078</text>
+</g>
+<g transform="translate(0,180)">
+<text x="0" y="18" class="ptitle">Topic classification <tspan class="pmetric">(macro-F1)</tspan></text>
+<line x1="146.5" y1="28" x2="146.5" y2="128" stroke="#e6e6e6" stroke-width="1"/>
+<text x="146.5" y="146" text-anchor="middle" class="tick">.20</text>
+<line x1="259.1" y1="28" x2="259.1" y2="128" stroke="#e6e6e6" stroke-width="1"/>
+<text x="259.1" y="146" text-anchor="middle" class="tick">.30</text>
+<line x1="371.7" y1="28" x2="371.7" y2="128" stroke="#e6e6e6" stroke-width="1"/>
+<text x="371.7" y="146" text-anchor="middle" class="tick">.40</text>
+<line x1="484.3" y1="28" x2="484.3" y2="128" stroke="#e6e6e6" stroke-width="1"/>
+<text x="484.3" y="146" text-anchor="middle" class="tick">.50</text>
+<line x1="597.0" y1="28" x2="597.0" y2="128" stroke="#e6e6e6" stroke-width="1"/>
+<text x="597.0" y="146" text-anchor="middle" class="tick">.60</text>
+<line x1="124" y1="128" x2="642" y2="128" stroke="#c3c2b7" stroke-width="1"/>
+<text x="110" y="48.5" text-anchor="end" class="rl">Economics</text>
+<rect x="303.7" y="37" width="93.3" height="14" rx="7" fill="#f0efec"/>
+<g><title>SBERT: .418</title><rect x="388.1" y="40.1" width="7.8" height="7.8" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>GTE: .398</title><path d="M369.5,38.5 L374.5,47.7 L364.4,47.7Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>EmbeddingGemma: .362</title><path d="M328.9,38.5 L334.5,44.0 L328.9,49.5 L323.4,44.0Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>Instructor: .379</title><path d="M348.1,49.5 L353.2,40.3 L343.0,40.3Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>SPECTER2: .344</title><path d="M303.6,44.0 H313.7 M308.7,38.9 V49.1" stroke="#6f6e6a" stroke-width="2.4" fill="none"/></g>
+<line x1="193.8" y1="44" x2="342.5" y2="44" stroke="#eb6834" stroke-width="2" stroke-opacity=".55"/>
+<line x1="176.9" y1="44" x2="210.7" y2="44" stroke="#eb6834" stroke-width="1.2"/>
+<line x1="317.7" y1="44" x2="367.2" y2="44" stroke="#eb6834" stroke-width="1.2"/>
+<g><title>Doc2LoRA without g: .242</title><circle cx="193.8" cy="44" r="5" fill="#fff" stroke="#eb6834" stroke-width="2"/></g>
+<g><title>Doc2LoRA with g: .374</title><circle cx="342.5" cy="44" r="6" fill="#eb6834" stroke="#fff" stroke-width="2"/></g>
+<text x="720" y="48.5" text-anchor="end" class="num gain">+.132</text>
+<text x="110" y="80.5" text-anchor="end" class="rl">Psychology</text>
+<rect x="275.5" y="69" width="62.9" height="14" rx="7" fill="#f0efec"/>
+<g><title>SBERT: .366</title><rect x="329.5" y="72.1" width="7.8" height="7.8" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>GTE: .350</title><path d="M315.4,70.5 L320.5,79.7 L310.4,79.7Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>EmbeddingGemma: .358</title><path d="M324.4,70.5 L330.0,76.0 L324.4,81.5 L318.9,76.0Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>Instructor: .348</title><path d="M313.2,81.5 L318.2,72.3 L308.1,72.3Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>SPECTER2: .319</title><path d="M275.5,76.0 H285.6 M280.5,70.9 V81.1" stroke="#6f6e6a" stroke-width="2.4" fill="none"/></g>
+<line x1="165.7" y1="76" x2="304.2" y2="76" stroke="#eb6834" stroke-width="2" stroke-opacity=".55"/>
+<line x1="154.4" y1="76" x2="176.9" y2="76" stroke="#eb6834" stroke-width="1.2"/>
+<line x1="281.7" y1="76" x2="326.7" y2="76" stroke="#eb6834" stroke-width="1.2"/>
+<g><title>Doc2LoRA without g: .217</title><circle cx="165.7" cy="76" r="5" fill="#fff" stroke="#eb6834" stroke-width="2"/></g>
+<g><title>Doc2LoRA with g: .340</title><circle cx="304.2" cy="76" r="6" fill="#eb6834" stroke="#fff" stroke-width="2"/></g>
+<text x="720" y="80.5" text-anchor="end" class="num gain">+.123</text>
+<text x="110" y="112.5" text-anchor="end" class="rl">Physics</text>
+<rect x="561.6" y="101" width="38.2" height="14" rx="7" fill="#f0efec"/>
+<g><title>SBERT: .573</title><rect x="562.6" y="104.1" width="7.8" height="7.8" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>GTE: .587</title><path d="M582.3,102.5 L587.4,111.7 L577.3,111.7Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>EmbeddingGemma: .588</title><path d="M583.4,102.5 L589.0,108.0 L583.4,113.5 L577.9,108.0Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>Instructor: .574</title><path d="M567.7,113.5 L572.7,104.3 L562.6,104.3Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>SPECTER2: .598</title><path d="M589.6,108.0 H599.8 M594.7,102.9 V113.1" stroke="#6f6e6a" stroke-width="2.4" fill="none"/></g>
+<line x1="572.2" y1="108" x2="599.2" y2="108" stroke="#eb6834" stroke-width="1.2"/>
+<line x1="575.6" y1="108" x2="595.8" y2="108" stroke="#eb6834" stroke-width="1.2"/>
+<g><title>Doc2LoRA without g: .590</title><circle cx="585.7" cy="108" r="5" fill="#fff" stroke="#eb6834" stroke-width="2"/></g>
+<g><title>Doc2LoRA with g: .590</title><circle cx="585.7" cy="108" r="6" fill="#eb6834" stroke="#fff" stroke-width="2"/></g>
+<text x="720" y="112.5" text-anchor="end" class="num gain">+.000</text>
+</g>
+<g transform="translate(0,360)">
+<text x="0" y="18" class="ptitle">Collaboration prediction <tspan class="pmetric">(AUC)</tspan></text>
+<line x1="174.1" y1="28" x2="174.1" y2="128" stroke="#e6e6e6" stroke-width="1"/>
+<text x="174.1" y="146" text-anchor="middle" class="tick">.60</text>
+<line x1="341.2" y1="28" x2="341.2" y2="128" stroke="#e6e6e6" stroke-width="1"/>
+<text x="341.2" y="146" text-anchor="middle" class="tick">.70</text>
+<line x1="508.3" y1="28" x2="508.3" y2="128" stroke="#e6e6e6" stroke-width="1"/>
+<text x="508.3" y="146" text-anchor="middle" class="tick">.80</text>
+<line x1="124" y1="128" x2="642" y2="128" stroke="#c3c2b7" stroke-width="1"/>
+<text x="110" y="48.5" text-anchor="end" class="rl">Economics</text>
+<rect x="202.5" y="37" width="68.5" height="14" rx="7" fill="#f0efec"/>
+<g><title>SBERT: .655</title><rect x="262.1" y="40.1" width="7.8" height="7.8" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>GTE: .627</title><path d="M219.2,38.5 L224.3,47.7 L214.2,47.7Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>EmbeddingGemma: .633</title><path d="M229.3,38.5 L234.8,44.0 L229.3,49.5 L223.8,44.0Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>Instructor: .620</title><path d="M207.5,49.5 L212.6,40.3 L202.5,40.3Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>SPECTER2: .632</title><path d="M222.5,44.0 H232.7 M227.6,38.9 V49.1" stroke="#6f6e6a" stroke-width="2.4" fill="none"/></g>
+<line x1="167.4" y1="44" x2="222.6" y2="44" stroke="#eb6834" stroke-width="2" stroke-opacity=".55"/>
+<line x1="149.1" y1="44" x2="185.8" y2="44" stroke="#eb6834" stroke-width="1.2"/>
+<line x1="202.5" y1="44" x2="242.6" y2="44" stroke="#eb6834" stroke-width="1.2"/>
+<g><title>Doc2LoRA without g: .596</title><circle cx="167.4" cy="44" r="5" fill="#fff" stroke="#eb6834" stroke-width="2"/></g>
+<g><title>Doc2LoRA with g: .629</title><circle cx="222.6" cy="44" r="6" fill="#eb6834" stroke="#fff" stroke-width="2"/></g>
+<text x="720" y="48.5" text-anchor="end" class="num gain">+.033</text>
+<text x="110" y="80.5" text-anchor="end" class="rl">Psychology</text>
+<rect x="251.0" y="69" width="80.2" height="14" rx="7" fill="#f0efec"/>
+<g><title>SBERT: .691</title><rect x="322.3" y="72.1" width="7.8" height="7.8" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>GTE: .668</title><path d="M287.8,70.5 L292.8,79.7 L282.7,79.7Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>EmbeddingGemma: .666</title><path d="M284.4,70.5 L289.9,76.0 L284.4,81.5 L278.9,76.0Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>Instructor: .649</title><path d="M256.0,81.5 L261.1,72.3 L250.9,72.3Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>SPECTER2: .665</title><path d="M277.7,76.0 H287.8 M282.7,70.9 V81.1" stroke="#6f6e6a" stroke-width="2.4" fill="none"/></g>
+<line x1="177.5" y1="76" x2="319.5" y2="76" stroke="#eb6834" stroke-width="2" stroke-opacity=".55"/>
+<line x1="157.4" y1="76" x2="197.5" y2="76" stroke="#eb6834" stroke-width="1.2"/>
+<line x1="302.8" y1="76" x2="336.2" y2="76" stroke="#eb6834" stroke-width="1.2"/>
+<g><title>Doc2LoRA without g: .602</title><circle cx="177.5" cy="76" r="5" fill="#fff" stroke="#eb6834" stroke-width="2"/></g>
+<g><title>Doc2LoRA with g: .687</title><circle cx="319.5" cy="76" r="6" fill="#eb6834" stroke="#fff" stroke-width="2"/></g>
+<text x="720" y="80.5" text-anchor="end" class="num gain">+.085</text>
+<text x="110" y="112.5" text-anchor="end" class="rl">Physics</text>
+<rect x="546.8" y="101" width="56.8" height="14" rx="7" fill="#f0efec"/>
+<g><title>SBERT: .832</title><rect x="557.9" y="104.1" width="7.8" height="7.8" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>GTE: .839</title><path d="M573.5,102.5 L578.6,111.7 L568.4,111.7Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>EmbeddingGemma: .828</title><path d="M555.1,102.5 L560.6,108.0 L555.1,113.5 L549.6,108.0Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>Instructor: .854</title><path d="M598.6,113.5 L603.6,104.3 L593.5,104.3Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>SPECTER2: .826</title><path d="M546.7,108.0 H556.8 M551.8,102.9 V113.1" stroke="#6f6e6a" stroke-width="2.4" fill="none"/></g>
+<line x1="488.3" y1="108" x2="501.6" y2="108" stroke="#eb6834" stroke-width="1.2"/>
+<line x1="493.3" y1="108" x2="506.7" y2="108" stroke="#eb6834" stroke-width="1.2"/>
+<g><title>Doc2LoRA without g: .792</title><circle cx="495.0" cy="108" r="5" fill="#fff" stroke="#eb6834" stroke-width="2"/></g>
+<g><title>Doc2LoRA with g: .795</title><circle cx="500.0" cy="108" r="6" fill="#eb6834" stroke="#fff" stroke-width="2"/></g>
+<text x="720" y="112.5" text-anchor="end" class="num gain">+.003</text>
+</g>
+<g transform="translate(0,540)">
+<text x="0" y="18" class="ptitle">Author-name disambiguation <tspan class="pmetric">(B³ F1)</tspan></text>
+<line x1="218.2" y1="28" x2="218.2" y2="192" stroke="#e6e6e6" stroke-width="1"/>
+<text x="218.2" y="210" text-anchor="middle" class="tick">.70</text>
+<line x1="375.2" y1="28" x2="375.2" y2="192" stroke="#e6e6e6" stroke-width="1"/>
+<text x="375.2" y="210" text-anchor="middle" class="tick">.80</text>
+<line x1="532.1" y1="28" x2="532.1" y2="192" stroke="#e6e6e6" stroke-width="1"/>
+<text x="532.1" y="210" text-anchor="middle" class="tick">.90</text>
+<line x1="124" y1="192" x2="642" y2="192" stroke="#c3c2b7" stroke-width="1"/>
+<text x="110" y="48.5" text-anchor="end" class="rl">zbMATH</text>
+<rect x="580.5" y="37" width="25.7" height="14" rx="7" fill="#f0efec"/>
+<g><title>SBERT: .944</title><rect x="597.3" y="40.1" width="7.8" height="7.8" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>GTE: .939</title><path d="M593.3,38.5 L598.4,47.7 L588.3,47.7Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>EmbeddingGemma: .934</title><path d="M585.5,38.5 L591.0,44.0 L585.5,49.5 L580.0,44.0Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>Instructor: .936</title><path d="M588.6,49.5 L593.7,40.3 L583.6,40.3Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>SPECTER2: .934</title><path d="M580.4,44.0 H590.6 M585.5,38.9 V49.1" stroke="#6f6e6a" stroke-width="2.4" fill="none"/></g>
+<line x1="582.4" y1="44" x2="585.5" y2="44" stroke="#eb6834" stroke-width="1.2"/>
+<line x1="580.8" y1="44" x2="583.9" y2="44" stroke="#eb6834" stroke-width="1.2"/>
+<g><title>Doc2LoRA without g: .933</title><circle cx="583.9" cy="44" r="5" fill="#fff" stroke="#eb6834" stroke-width="2"/></g>
+<g><title>Doc2LoRA with g: .932</title><circle cx="582.4" cy="44" r="6" fill="#eb6834" stroke="#fff" stroke-width="2"/></g>
+<text x="720" y="48.5" text-anchor="end" class="num gain">−.001</text>
+<text x="110" y="80.5" text-anchor="end" class="rl">QIAN</text>
+<rect x="420.4" y="69" width="63.4" height="14" rx="7" fill="#f0efec"/>
+<g><title>SBERT: .865</title><rect x="473.3" y="72.1" width="7.8" height="7.8" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>GTE: .866</title><path d="M478.8,70.5 L483.8,79.7 L473.7,79.7Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>EmbeddingGemma: .832</title><path d="M425.4,70.5 L430.9,76.0 L425.4,81.5 L419.9,76.0Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>Instructor: .832</title><path d="M425.4,81.5 L430.4,72.3 L420.3,72.3Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>SPECTER2: .832</title><path d="M420.3,76.0 H430.4 M425.4,70.9 V81.1" stroke="#6f6e6a" stroke-width="2.4" fill="none"/></g>
+<line x1="354.7" y1="76" x2="453.6" y2="76" stroke="#eb6834" stroke-width="2" stroke-opacity=".55"/>
+<line x1="346.9" y1="76" x2="362.6" y2="76" stroke="#eb6834" stroke-width="1.2"/>
+<line x1="447.4" y1="76" x2="459.9" y2="76" stroke="#eb6834" stroke-width="1.2"/>
+<g><title>Doc2LoRA without g: .787</title><circle cx="354.7" cy="76" r="5" fill="#fff" stroke="#eb6834" stroke-width="2"/></g>
+<g><title>Doc2LoRA with g: .850</title><circle cx="453.6" cy="76" r="6" fill="#eb6834" stroke="#fff" stroke-width="2"/></g>
+<text x="720" y="80.5" text-anchor="end" class="num gain">+.063</text>
+<text x="110" y="112.5" text-anchor="end" class="rl">ArnetMiner</text>
+<rect x="164.5" y="101" width="68.1" height="14" rx="7" fill="#f0efec"/>
+<g><title>SBERT: .698</title><rect x="211.1" y="104.1" width="7.8" height="7.8" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>GTE: .698</title><path d="M215.0,102.5 L220.1,111.7 L210.0,111.7Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>EmbeddingGemma: .706</title><path d="M227.6,102.5 L233.1,108.0 L227.6,113.5 L222.1,108.0Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>Instructor: .679</title><path d="M185.2,113.5 L190.3,104.3 L180.2,104.3Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>SPECTER2: .669</title><path d="M164.5,108.0 H174.6 M169.5,102.9 V113.1" stroke="#6f6e6a" stroke-width="2.4" fill="none"/></g>
+<line x1="183.6" y1="108" x2="230.7" y2="108" stroke="#eb6834" stroke-width="2" stroke-opacity=".55"/>
+<line x1="177.4" y1="108" x2="189.9" y2="108" stroke="#eb6834" stroke-width="1.2"/>
+<line x1="222.9" y1="108" x2="238.6" y2="108" stroke="#eb6834" stroke-width="1.2"/>
+<g><title>Doc2LoRA without g: .678</title><circle cx="183.6" cy="108" r="5" fill="#fff" stroke="#eb6834" stroke-width="2"/></g>
+<g><title>Doc2LoRA with g: .708</title><circle cx="230.7" cy="108" r="6" fill="#eb6834" stroke="#fff" stroke-width="2"/></g>
+<text x="720" y="112.5" text-anchor="end" class="num gain">+.030</text>
+<text x="110" y="144.5" text-anchor="end" class="rl">PubMed</text>
+<rect x="274.4" y="133" width="156.0" height="14" rx="7" fill="#f0efec"/>
+<g><title>SBERT: .832</title><rect x="421.5" y="136.1" width="7.8" height="7.8" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>GTE: .792</title><path d="M362.6,134.5 L367.7,143.7 L357.5,143.7Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>EmbeddingGemma: .822</title><path d="M409.7,134.5 L415.2,140.0 L409.7,145.5 L404.2,140.0Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>Instructor: .801</title><path d="M376.7,145.5 L381.8,136.3 L371.7,136.3Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>SPECTER2: .739</title><path d="M274.3,140.0 H284.5 M279.4,134.9 V145.1" stroke="#6f6e6a" stroke-width="2.4" fill="none"/></g>
+<line x1="207.2" y1="140" x2="398.7" y2="140" stroke="#eb6834" stroke-width="2" stroke-opacity=".55"/>
+<line x1="196.2" y1="140" x2="218.2" y2="140" stroke="#eb6834" stroke-width="1.2"/>
+<line x1="389.3" y1="140" x2="408.1" y2="140" stroke="#eb6834" stroke-width="1.2"/>
+<g><title>Doc2LoRA without g: .693</title><circle cx="207.2" cy="140" r="5" fill="#fff" stroke="#eb6834" stroke-width="2"/></g>
+<g><title>Doc2LoRA with g: .815</title><circle cx="398.7" cy="140" r="6" fill="#eb6834" stroke="#fff" stroke-width="2"/></g>
+<text x="720" y="144.5" text-anchor="end" class="num gain">+.122</text>
+<text x="110" y="176.5" text-anchor="end" class="rl">KISTI</text>
+<rect x="285.4" y="165" width="83.8" height="14" rx="7" fill="#f0efec"/>
+<g><title>SBERT: .793</title><rect x="360.3" y="168.1" width="7.8" height="7.8" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>GTE: .785</title><path d="M351.6,166.5 L356.7,175.7 L346.5,175.7Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>EmbeddingGemma: .771</title><path d="M329.6,166.5 L335.2,172.0 L329.6,177.5 L324.1,172.0Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>Instructor: .754</title><path d="M302.9,177.5 L308.0,168.3 L297.9,168.3Z" fill="#6f6e6a" stroke="#fff" stroke-width="1.5" paint-order="stroke"/></g>
+<g><title>SPECTER2: .746</title><path d="M285.3,172.0 H295.4 M290.4,166.9 V177.1" stroke="#6f6e6a" stroke-width="2.4" fill="none"/></g>
+<line x1="230.7" y1="172" x2="323.4" y2="172" stroke="#eb6834" stroke-width="2" stroke-opacity=".55"/>
+<line x1="227.6" y1="172" x2="233.9" y2="172" stroke="#eb6834" stroke-width="1.2"/>
+<line x1="320.2" y1="172" x2="326.5" y2="172" stroke="#eb6834" stroke-width="1.2"/>
+<g><title>Doc2LoRA without g: .708</title><circle cx="230.7" cy="172" r="5" fill="#fff" stroke="#eb6834" stroke-width="2"/></g>
+<g><title>Doc2LoRA with g: .767</title><circle cx="323.4" cy="172" r="6" fill="#eb6834" stroke="#fff" stroke-width="2"/></g>
+<text x="720" y="176.5" text-anchor="end" class="num gain">+.059</text>
+</g>
+</svg></div>
+  <figcaption><b>Figure 4.</b> Scores on each benchmark; higher is better. Grey markers are the five text encoders, and the grey band spans the worst to the best of them. The line from the open to the filled circle is what <span class="g">g</span> adds, and the number at the right is the size of that gain. Thin whiskers on the Doc2LoRA points show one bootstrap standard deviation and are mostly hidden behind the circles. Each axis is cropped to the range of the scores.</figcaption>
+  <details>
+    <summary>All scores</summary>
+    <div class="tablebox"><table class="scores">
+<thead><tr><th rowspan="2">Task</th><th rowspan="2">Field / dataset</th><th colspan="2" class="grp">Doc2LoRA</th><th colspan="5" class="grp">Text encoders</th></tr>
+<tr><th>without g</th><th class="d2l">with g</th><th>SBERT</th><th>GTE</th><th>EmbeddingGemma</th><th>Instructor</th><th>SPECTER2</th></tr></thead><tbody>
+<tr class=first><th rowspan="3" class="task">Next-paper prediction<span class="metric">AUC</span></th><th class="ds">Economics</th><td class="">.813<span class="sd">±.001</span></td><td class="d2l">.910<span class="sd">±.001</span></td><td class="best">.937<span class="sd">±.001</span></td><td class="">.910<span class="sd">±.001</span></td><td class="">.906<span class="sd">±.001</span></td><td class="">.877<span class="sd">±.001</span></td><td class="">.903<span class="sd">±.001</span></td></tr>
+<tr><th class="ds">Psychology</th><td class="">.799<span class="sd">±.001</span></td><td class="d2l">.923<span class="sd">±.001</span></td><td class="best">.937<span class="sd">±.001</span></td><td class="">.912<span class="sd">±.001</span></td><td class="">.910<span class="sd">±.001</span></td><td class="">.888<span class="sd">±.001</span></td><td class="">.908<span class="sd">±.001</span></td></tr>
+<tr><th class="ds">Physics</th><td class="">.880<span class="sd">±.001</span></td><td class="d2l">.958<span class="sd">±.001</span></td><td class="">.956<span class="sd">±.001</span></td><td class="best">.962<span class="sd">±.001</span></td><td class="">.947<span class="sd">±.001</span></td><td class="">.908<span class="sd">±.001</span></td><td class="">.941<span class="sd">±.001</span></td></tr>
+<tr class=first><th rowspan="3" class="task">Topic classification<span class="metric">macro-F1</span></th><th class="ds">Economics</th><td class="">.242<span class="sd">±.015</span></td><td class="d2l">.374<span class="sd">±.022</span></td><td class="best">.418<span class="sd">±.022</span></td><td class="">.398<span class="sd">±.023</span></td><td class="">.362<span class="sd">±.021</span></td><td class="">.379<span class="sd">±.021</span></td><td class="">.344<span class="sd">±.021</span></td></tr>
+<tr><th class="ds">Psychology</th><td class="">.217<span class="sd">±.010</span></td><td class="d2l">.340<span class="sd">±.020</span></td><td class="best">.366<span class="sd">±.023</span></td><td class="">.350<span class="sd">±.019</span></td><td class="">.358<span class="sd">±.020</span></td><td class="">.348<span class="sd">±.026</span></td><td class="">.319<span class="sd">±.020</span></td></tr>
+<tr><th class="ds">Physics</th><td class="">.590<span class="sd">±.012</span></td><td class="d2l">.590<span class="sd">±.009</span></td><td class="">.573<span class="sd">±.011</span></td><td class="">.587<span class="sd">±.010</span></td><td class="">.588<span class="sd">±.010</span></td><td class="">.574<span class="sd">±.010</span></td><td class="best">.598<span class="sd">±.007</span></td></tr>
+<tr class=first><th rowspan="3" class="task">Collaboration prediction<span class="metric">AUC</span></th><th class="ds">Economics</th><td class="">.596<span class="sd">±.011</span></td><td class="d2l">.629<span class="sd">±.012</span></td><td class="best">.655<span class="sd">±.011</span></td><td class="">.627<span class="sd">±.012</span></td><td class="">.633<span class="sd">±.012</span></td><td class="">.620<span class="sd">±.012</span></td><td class="">.632<span class="sd">±.011</span></td></tr>
+<tr><th class="ds">Psychology</th><td class="">.602<span class="sd">±.012</span></td><td class="d2l">.687<span class="sd">±.010</span></td><td class="best">.691<span class="sd">±.011</span></td><td class="">.668<span class="sd">±.011</span></td><td class="">.666<span class="sd">±.011</span></td><td class="">.649<span class="sd">±.011</span></td><td class="">.665<span class="sd">±.011</span></td></tr>
+<tr><th class="ds">Physics</th><td class="">.792<span class="sd">±.004</span></td><td class="d2l">.795<span class="sd">±.004</span></td><td class="">.832<span class="sd">±.003</span></td><td class="">.839<span class="sd">±.003</span></td><td class="">.828<span class="sd">±.003</span></td><td class="best">.854<span class="sd">±.003</span></td><td class="">.826<span class="sd">±.004</span></td></tr>
+<tr class=first><th rowspan="5" class="task">Author-name disambiguation<span class="metric">B³ F1</span></th><th class="ds">zbMATH</th><td class="">.933<span class="sd">±.001</span></td><td class="d2l">.932<span class="sd">±.001</span></td><td class="best">.944<span class="sd">±.001</span></td><td class="">.939<span class="sd">±.001</span></td><td class="">.934<span class="sd">±.002</span></td><td class="">.936<span class="sd">±.001</span></td><td class="">.934<span class="sd">±.001</span></td></tr>
+<tr><th class="ds">QIAN</th><td class="">.787<span class="sd">±.005</span></td><td class="d2l">.850<span class="sd">±.004</span></td><td class="">.865<span class="sd">±.004</span></td><td class="best">.866<span class="sd">±.004</span></td><td class="">.832<span class="sd">±.004</span></td><td class="">.832<span class="sd">±.004</span></td><td class="">.832<span class="sd">±.004</span></td></tr>
+<tr><th class="ds">ArnetMiner</th><td class="">.678<span class="sd">±.004</span></td><td class="d2l best">.708<span class="sd">±.005</span></td><td class="">.698<span class="sd">±.005</span></td><td class="">.698<span class="sd">±.004</span></td><td class="">.706<span class="sd">±.004</span></td><td class="">.679<span class="sd">±.004</span></td><td class="">.669<span class="sd">±.004</span></td></tr>
+<tr><th class="ds">PubMed</th><td class="">.693<span class="sd">±.007</span></td><td class="d2l">.815<span class="sd">±.006</span></td><td class="best">.832<span class="sd">±.006</span></td><td class="">.792<span class="sd">±.006</span></td><td class="">.822<span class="sd">±.006</span></td><td class="">.801<span class="sd">±.006</span></td><td class="">.739<span class="sd">±.006</span></td></tr>
+<tr><th class="ds">KISTI</th><td class="">.708<span class="sd">±.002</span></td><td class="d2l">.767<span class="sd">±.002</span></td><td class="best">.793<span class="sd">±.002</span></td><td class="">.785<span class="sd">±.002</span></td><td class="">.771<span class="sd">±.002</span></td><td class="">.754<span class="sd">±.002</span></td><td class="">.746<span class="sd">±.002</span></td></tr>
+</tbody></table></div>
+    <figcaption style="margin-left:0">Mean ± standard deviation over 1,000 bootstrap resamples. Bold marks the best score in each row. For author-name disambiguation, SPECTER replaces SPECTER2.</figcaption>
+  </details>
+</figure></div>
+</section>
+
+<section id="next"><div class="wrap">
+  <h2>Where this goes next</h2>
+  <p>Traditional maps of science show only published work. Here, we built a new map that also covers unexplored areas—spaces between fields and combinations of ideas that haven't been tried. We can target gaps directly: What problem would a paper here address? What methods and experiments could bridge the divide?</p>
+  <p>This enables new questions: Can we trace a path across disciplines and see how concepts connect? Can we limit the map to papers up to a certain date, generate ideas for the "knowledge holes," and later see if those predictions appear in new research?</p>
+  <p> We must emphasize that our map reveals potential ideas, but verifying their validity is left for future investigation. The map does not assess how promising an idea is. That judgment is up to people. Yet, we believe that the Doc2LoRA embedding is a powerful tool for generating novel research questions and invites scientific curiosity.
+  </p>
+</div></section>
+
+<section id="cite"><div class="wrap">
+  <h2>Citation</h2>
+<pre class="bib">@article{mansuri2026doc2lora,
+  title   = {Doc2LoRA Provides Decodable Representations of Scientific Ideas},
+  author  = {Mansuri, Chand Sahil and Zachariah, Joel and Kojaku, Sadamori},
+  journal = {arXiv preprint},
+  year    = {2026}
+}</pre>
+</div></section>
+
+<footer><div class="wrap">
+  Chand Sahil Mansuri, Joel Zachariah, Sadamori Kojaku · Binghamton University<br>
+  Questions: <a href="mailto:skojaku@binghamton.edu">skojaku@binghamton.edu</a>
+</div></footer>
+
+<script>
+(function(){
+  var data=JSON.parse(document.getElementById('mixdata').textContent),
+      w=document.getElementById('mixw'),out=document.getElementById('mixout');
+  function upd(){var k=+w.value;out.textContent='Weight on paper B: '+k+'/12';
+    for(var key in data){var c=data[key][k],t=Math.max(c.a+c.b,1),pa=Math.round(100*c.a/t),box=document.getElementById('cnt-'+key);document.getElementById('mix-'+key).innerHTML=c.h;box.querySelector('.ba').style.width=pa+'%';box.querySelector('.bb').style.width=(100-pa)+'%';box.querySelector('.ctext').textContent=c.a+' paper-A words \u00b7 '+c.b+' paper-B words';}}
+  w.addEventListener('input',upd);upd();
+  var tabs=[].slice.call(document.querySelectorAll('.tabs [role=tab]'));
+  function sel(t){tabs.forEach(function(x){var on=x===t;x.setAttribute('aria-selected',on);
+    if(on)x.removeAttribute('tabindex');else x.setAttribute('tabindex','-1');
+    document.getElementById(x.getAttribute('aria-controls')).hidden=!on;});}
+  tabs.forEach(function(t,i){t.addEventListener('click',function(){sel(t)});
+    t.addEventListener('keydown',function(e){var d=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;
+      if(d){var n=tabs[(i+d+tabs.length)%tabs.length];sel(n);n.focus();e.preventDefault();}});});
+  [].slice.call(document.querySelectorAll('.trio img')).forEach(function(img,i){
+    img.addEventListener('click',function(){sel(tabs[i])});});
+})();
+</script>
+</body>
+</html>
