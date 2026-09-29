@@ -1,4 +1,4 @@
-# Doc2LoRA idea genes — reproduction workflow
+# Doc2LoRA embeddings ("idea genes") — reproduction workflow
 
 The code behind *"Doc2LoRA Provides Decodable Representations of Scientific Ideas"*:
 the Snakemake workflow that produces every number the paper reports, the scripts it
@@ -6,8 +6,11 @@ calls, and the two libraries they import. Code and documentation only — the
 manuscript lives elsewhere, and everything the workflow writes is regenerated, not
 committed.
 
-A **Doc2LoRA idea gene** is what you get when a hypernetwork reads a paper and emits a
-small LoRA adapter for it: the adapter's latent tensor becomes the paper's embedding.
+A **Doc2LoRA idea gene** — what the paper calls a *Doc2LoRA embedding*; the code and
+this documentation say *gene* — is what you get when a hypernetwork (a network whose
+output is the weights of another network) reads a paper and emits a small LoRA adapter
+for it (a low-rank weight update that changes what a language model writes): the
+adapter's latent tensor becomes the paper's embedding.
 Unlike an ordinary sentence embedding, that vector can be loaded back into the language
 model, so any point in the space — including a point you constructed by averaging or
 interpolating — can be *decoded* back into text. This workflow measures how well those
@@ -69,7 +72,13 @@ snakemake sample_judge -j1 \
 |---|---|---|---|
 | 1 | Rebuild every reported **table and figure** from archived scores | `python scripts/fetch_artifacts.py results` then `snakemake paper_assets -j4 --rerun-triggers mtime` | CPU, ~224 MB download |
 | 2 | Re-score the **name-disambiguation** rows from the vectors | `python scripts/fetch_artifacts.py results s2and` then `snakemake s2and uncertainty -j4` | CPU, +12 GB download |
-| 3 | Re-derive **everything from the corpora**, genes included | `snakemake paper_assets -j4` | 1–4 GPUs (≥48 GB total), ~200 GB disk, licensed APS corpus |
+| 3 | Re-derive **everything from the corpora**, genes included | `snakemake paper_assets -j4` | 1–4 GPUs (≥48 GB total), ~200 GB disk, licensed APS corpus, plus `triplets_1x.parquet` from the `results` tier |
+
+The archived intermediates are split into **tiers**: separately downloadable bundles,
+each named for what it lets you skip (`results`: every GPU- and judge-produced input of
+the tables; `s2and`: the name-disambiguation vectors). Path 3 still needs one file from
+the `results` tier, the citation sample the reported transform was trained on
+(REPRODUCE.md explains why it cannot be re-derived).
 
 ```bash
 snakemake -n paper_assets      # the whole DAG, nothing run: 330 jobs from a cold start
@@ -88,11 +97,11 @@ cp workflow/config.template.yaml workflow/config.yaml
 $EDITOR workflow/config.yaml     # every "<-- set me" line
 ```
 
-Nine keys are read with a hard `config[...]` and must exist or Snakemake fails while
+Eight keys are read with a hard `config[...]` and must exist or Snakemake fails while
 parsing: `data_dir`, `aps_paper_table`, `openalex_paper_table`, `openalex_abstracts`,
-`mistral_checkpoint_path`, `qwen_checkpoint_path`, `icae_weights`, `shard_size`,
-`gpu_ids`. Everything else has a default, and the template's values are the ones the
-paper used. The sample corpus needs none of them.
+`mistral_checkpoint_path`, `qwen_checkpoint_path`, `shard_size`, `gpu_ids`. Everything
+else has a default, and the template's values are the ones the paper used. The sample
+corpus needs none of them set: the template's placeholders are enough.
 
 ## Environment
 
@@ -104,7 +113,8 @@ paper used. The sample corpus needs none of them.
 - `libs/legacy` (`doc2lora_legacy`) — the frozen API the older chains import. Both are
   installed; scripts import one or the other by design.
 - `ctx_to_lora` — the hypernetwork itself. A **separate project**, not vendored here:
-  clone it and point `workflow/config.yaml:doc_to_lora_src` at its `src/`. Without it
+  clone [SakanaAI/doc-to-lora](https://github.com/SakanaAI/doc-to-lora) and point
+  `workflow/config.yaml:doc_to_lora_src` at its `src/`. Without it
   the CPU rules still run; gene extraction and decoding do not.
 - `hyper_llm_modulator` (Text-to-LoRA) — the same arrangement for the
   hypernetwork-adapter baseline; set `t2l_src`. It loads in the main environment, since
@@ -126,10 +136,10 @@ Secrets go in `.env` (gitignored): `HF_TOKEN` for the gated base models,
 | APS corpus (644k papers, metadata + abstracts) | request from [APS](https://journals.aps.org/datasets) | licensed; redistribution not permitted |
 | OpenAlex snapshot tables | [openalex.org/data-dump](https://openalex.org/data-dump) | ~100 GB of upstream data |
 | S2AND benchmark | [AllenAI S2AND](https://github.com/allenai/S2AND) — `rule s2and_download` fetches it | upstream distribution |
-| Doc2LoRA checkpoints (Gemma-2-2B, Mistral-7B, Qwen3-4B hypernetworks) | the doc-to-lora project release | model weights, tens of GB |
+| Doc2LoRA checkpoints (Gemma-2-2B, Mistral-7B, Qwen3-4B hypernetworks) | [SakanaAI/doc-to-lora](https://huggingface.co/SakanaAI/doc-to-lora) on Hugging Face; place them under `data/agent_assets/` as the config expects | model weights, tens of GB |
 | ICAE baseline weights | [ICAE](https://github.com/getao/icae) | third-party weights |
 | Text-to-LoRA source and `hypermod.pt` | [SakanaAI/text-to-lora](https://github.com/SakanaAI/text-to-lora) | third-party project and weights |
-| `vec2text` GTR corrector | [vec2text](https://github.com/jxmorris12/vec2text) | third-party weights, isolated venv |
+| `vec2text` GTR corrector | [vec2text](https://github.com/vec2text/vec2text) | third-party weights, isolated venv |
 
 Archived **intermediates** (per-unit score pools, adapters, benchmark embeddings) are on
 Zenodo:
@@ -187,9 +197,12 @@ encoders. Three kinds of method appear:
   `BERTopic`'s c-TF-IDF keywords — which set the ceiling the vector methods are measured
   against.
 
-The invertible citation transform $g_\theta$ is applied on top of frozen idea genes, per
-field (`kron_adapter.smk`) and as a single general OpenAlex transform
-(`general_adapter.smk`), so the raw and transformed rows come from the same embeddings.
+The citation transform $g_\theta$ (`g_theta` in the code) is a small invertible linear
+map trained on pairs of citing and cited papers, so that cosine similarity between
+genes reflects topical relatedness; it is Kronecker-factored, hence the `kron` in file
+names. It is applied on top of frozen idea genes, per field (`kron_adapter.smk`) and as
+a single general OpenAlex transform (`general_adapter.smk`, the one the paper reports),
+so the raw and transformed rows come from the same embeddings.
 
 ## Citation
 

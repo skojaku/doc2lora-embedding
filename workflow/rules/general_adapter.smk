@@ -136,7 +136,7 @@ rule ga_eval_s2and:
     shell: f"{GA_ENV} OUT_SUFFIX=_general KRON_STEPS=2000 KRON_REG=10 {GPU} python {SCRIPTS}/and_eval.py {{wildcards.ds}} {{wildcards.enc}}"
 
 
-# ---- leakage audit (issue #22): overlap between the g_theta training pool and
+# ---- leakage audit: overlap between the g_theta training pool and
 # every eval split. CPU-only, post-hoc; reads saved IDs, no retraining. The
 # OpenAlex master paper_table (for the APS DOI map) is an external source file,
 # passed as a param rather than tracked. ----

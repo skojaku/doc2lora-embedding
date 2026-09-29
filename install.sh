@@ -16,7 +16,7 @@ eval "$(conda shell.bash hook)"
 conda activate "$ENV_NAME"
 
 # The two local packages: the current API and the frozen legacy API the
-# exps/ chains import.
+# older workflow chains import.
 pip install -e libs/doc2lora
 pip install -e libs/legacy
 
@@ -24,6 +24,6 @@ pip install -e libs/legacy
 # Clone it and point workflow/config.yaml:doc_to_lora_src at its src/.
 echo
 echo "Next:"
-echo "  1. git clone <doc-to-lora> && set doc_to_lora_src in workflow/config.yaml"
+echo "  1. git clone https://github.com/SakanaAI/doc-to-lora && set doc_to_lora_src in workflow/config.yaml"
 echo "  2. pip install flash-attn==2.7.4.post1 --no-build-isolation   # GPU rules only"
 echo "  3. cp workflow/config.template.yaml workflow/config.yaml && edit the paths"

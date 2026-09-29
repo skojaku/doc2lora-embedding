@@ -1,8 +1,8 @@
-# Incoherent-cluster / norm-matched control for cluster labelling (#101).
+# Incoherent-cluster / norm-matched control for cluster labelling (App. D.2).
 #
-# Sec. 4.3 says the NORM of a vector sets the abstraction level of its decode, and a centroid's norm
+# Sec. 3.1 says the NORM of a vector sets the abstraction level of its decode, and a centroid's norm
 # is set by how mutually aligned its members are.  If that is the whole story, a cluster of unrelated
-# papers also decodes to a confident broad field name, and Sec. 4.2 would be measuring dispersion
+# papers also decodes to a confident broad field name, and the labels would be measuring dispersion
 # rather than shared content.  This chain runs the missing control:
 #
 #   incoh_build   -> clusters.json          matched-cardinality cross-PACS-chapter clusters (2 draws)
@@ -11,7 +11,7 @@
 #   incoh_score   -> incoh_scores.json + incoh_rows.parquet (SBERT + judge panel)
 #   incoh_report  -> figs/incoherent_control.{tex,pdf} (CPU, from the two files above)
 #
-# The real arm is re-extracted here (not read from data/labels) so both arms go
+# The real clusters are re-extracted here (not read from data/labels) so both conditions go
 # through one code path; the manuscript's own label artifacts are left untouched.
 #
 # RUN: snakemake groupc_incoherent -j4 --rerun-triggers mtime

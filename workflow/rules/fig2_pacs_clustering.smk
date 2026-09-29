@@ -1,5 +1,5 @@
-# Figure 2 (figs/pacs-clustering.pdf) and Tab. mixing-decode
-# (figs/mixing_decode.tex): cluster labels and mixtures (#141).
+# Figure 2 (<figs_dir>/pacs-clustering.pdf) and Tab. 1 mixing-decode
+# (<figs_dir>/mixing_decode.tex): cluster labels and mixtures.
 #
 # Both are drawn from cached numbers by scripts under workflow/:
 #
@@ -11,16 +11,16 @@
 #   (d) Wikipedia abstraction walk <- abstraction_walk.smk: aw_doc2lora
 #   (e) actual vs ideal mixing     <- pair_axis_metrics.py cache  (simplex_kwgrid.smk)
 #   (f) verbatim copy rate         <- pair_axis_copyrate.py cache (simplex_kwgrid.smk)
-#       + the T2L arm, same grid   <- fig2_t2l_edge_metrics (SBERT on CPU over the T2L
-#                                     edge decodes of t2l.smk:t2l_fusion, #151)
+#       + T2L, same grid           <- fig2_t2l_edge_metrics (SBERT on CPU over the T2L
+#                                     edge decodes of t2l.smk:t2l_fusion)
 #   Tab. mixing-decode (workflow/scripts/fig2_mixing_table.py)
 #       one pair decoded at 3/12, 5/12, 9/12 of the way to paper B: the decoded abstracts' openings from the
-#       tracked pairCSML_00 decodes, t from fig2_colorband_metrics (SBERT on CPU)
+#       archived pairCSML_00 decodes, t from fig2_colorband_metrics (SBERT on CPU)
 #
-# CPU only. Every input is a small cache that is tracked in git (see the
-# .gitignore exceptions), so the assets rebuild from a clean clone without the
+# CPU only. Every input is a small cache that ships in the `results` artifact tier
+# (scripts/fetch_artifacts.py results), so the assets rebuild on a CPU without the
 # GPU decodes or judge calls behind those caches. Regenerating a cache itself is
-# the job of the experiment named next to it.
+# the job of the rule named next to it.
 #
 # RUN: snakemake fig2
 from os.path import join as j
@@ -84,7 +84,7 @@ rule fig2_decode_curated_icae:
         " env SRC_KW=1 KWTAG=_pairaxis PAIR_EDGE=1 python {input.script} " + FIG2_PAIR_SET
 
 
-# Inputs and output are all tracked in git, and a fresh checkout stamps them with
+# Inputs and output are tracked in git or ship in the `results` tier, and either way they carry
 # arbitrary mtimes -- so without ancient() this CPU+SBERT job re-runs on a clone
 # purely to rewrite a file that is already correct.
 rule fig2_colorband_metrics:
@@ -103,9 +103,9 @@ rule fig2_colorband_metrics:
 
 
 # T2L along the edge: t2l_fusion.py decoded 100 corner pairs on the 13-point alpha
-# grid of the other arms (GPU, branch of #151); this scores those decodes the same
+# grid of the other methods (GPU); this scores those decodes the same
 # way, so (e), (f) carry a T2L curve rather than three markers. The
-# cache is tracked, so a clone without that experiment still draws (e), (f).
+# cache ships in the `results` tier, so a clone without those decodes still draws (e), (f).
 rule fig2_t2l_edge_metrics:
     input:
         midpoints = ancient(FIG2_T2L_MIDPOINTS),
@@ -130,8 +130,8 @@ rule fig2_mixing_table:
 
 # The judge cache (panel b) is deliberately a PARAM, not an input: as an input
 # it would pull bt_label_eval_metric4 -- the OpenRouter judge panel -- into the
-# `paper` DAG, which baseline_trees keeps out on purpose (it sits behind the
-# separate `label_eval` target). The file is tracked in git; after a new judge
+# `paper_assets` DAG, which baseline_trees keeps out on purpose (it sits behind the
+# separate `label_eval` target). The file ships in the `results` tier; after a new judge
 # run, `snakemake fig2 --forcerun fig2_pacs_clustering` re-plots it.
 rule fig2_pacs_clustering:
     input:

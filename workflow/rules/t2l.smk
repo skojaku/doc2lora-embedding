@@ -1,7 +1,6 @@
-# Text-to-LoRA (Charakorn et al., ICML 2025) as a hypernetwork-adapter baseline (#151).
+# Text-to-LoRA (Charakorn et al., ICML 2025) as a hypernetwork-adapter baseline (Sec. 3).
 #
-# The base method was rejected at ICLR 2026 partly for having no hypernetwork-adapter
-# baseline, so this arm is not optional. The question is not whether T2L is a good
+# T2L is the closest hypernetwork-adapter baseline, so this comparison is not optional. The question is not whether T2L is a good
 # hypernetwork -- it is whether GENERATING adapters is by itself enough to give a
 # decodable space, or whether the space has to be learned.
 #
@@ -22,7 +21,7 @@
 # experimentally. Claim ceiling: "as a document embedding, on the same input every other
 # method gets, T2L's pipeline does not yield a decodable space." Nothing stronger.
 #
-# Generator is mistralai/Mistral-7B-Instruct-v0.2, the same base as the ICAE arm
+# Generator is mistralai/Mistral-7B-Instruct-v0.2, the same base as the ICAE baseline
 # (config.yaml:icae_base_model), so decodes are comparable at the generator level.
 #
 # Runs in the MAIN env: hypermod.pt is a plain state_dict, so T2L's transformers==4.46.2
@@ -81,7 +80,7 @@ rule t2l_validity:
            "--task {params.task} --n {params.n}"
 
 
-# ── Cluster-label arm: one {code: label} JSON per embedding position ──────────
+# ── Cluster labels: one {code: label} JSON per embedding position ─────────────
 rule t2l_label:
     input: script=j(SCRIPTS, "t2l_label.py"), common=j(SCRIPTS, "t2l_common.py"),
            prompt=j(SCRIPTS, "shared_prompt.py"),
@@ -102,10 +101,10 @@ rule t2l_label_register:
     shell: "cp {input} " + BT + "/"
 
 
-# ── Fusion arm: the same 100 corner pairs as §4.3 (50 near L1 + 50 far L5) ────
+# ── Fusion edge: the same 100 corner pairs as Sec. 3.2 (50 near L1 + 50 far L5) ─
 # The prediction is that T2L midpoints do NOT blend, because its coordinates belong to a
 # frozen encoder. If they DO blend, adapter-space smoothness is a general property of
-# hypernetwork adapters and §5's mechanism paragraph has to be rewritten -- which is why
+# hypernetwork adapters and the Discussion's mechanism paragraph has to be rewritten -- which is why
 # this is worth running either way.
 rule t2l_fusion:
     # ancient(): a fresh clone checks the scripts out newer than the archived midpoints (the
@@ -117,7 +116,7 @@ rule t2l_fusion:
     resources: gpu=1,
     shell: T2L_ENV + f" python {SCRIPTS}/t2l_fusion.py --n 50"
 
-# scored by the gene-vs-activation scorer (#152) so the arms are directly comparable
+# scored by the gene-vs-activation scorer so the methods are directly comparable
 rule t2l_fusion_score:
     input: expand(j(T2L_RES, "midpoints_t2l_{sp}.json"), sp=T2L_FUSION_SPACES),
            script="workflow/scripts/midpoint_score.py",

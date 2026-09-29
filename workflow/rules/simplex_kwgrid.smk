@@ -1,5 +1,5 @@
 # Pair-axis interpolation study (data/pair_axis) -- the data and
-# the panels behind Figure 2's two-way composition result (#60 follow-up, #141).
+# the panels behind Figure 2's two-way composition result (panels e, f).
 #
 # Simplifies the 3-corner fusion simplex to a single A-B axis: fuse two corner
 # papers at 13 points along the interpolation, decode an abstract with each of
@@ -20,24 +20,13 @@
 #          batched per stratum (50 sets/job) to amortize the checkpoint load
 #          across all 50 sets in that job instead of paying it 250x.
 #
-#   skg_*  the Figure 2 panels. CPU ONLY, seconds. Both scripts cache what they
-#          plot -- pair_axis_metrics_pairaxis.json and
-#          pair_axis_copyrate_pairaxis_<stratum>.json, both tracked in git --
-#          and --replot draws from those caches without a GPU or SBERT. So the
-#          panels rebuild from a fresh clone even though the decodes behind them
-#          do not.
+#   kg_metrics / kg_copyrate  the Figure 2 caches. Both scripts cache what the
+#          panels plot -- pair_axis_metrics_pairaxis.json and
+#          pair_axis_copyrate_pairaxis_<stratum>.json. Both caches ship in the
+#          `results` artifact tier, so fig2_pacs_clustering (which declares them
+#          as inputs) draws the panels on a CPU without re-running the decodes.
 #
-# The panel rules deliberately do NOT declare those caches as inputs, even though
-# they read them. Snakemake links rules by path, so declaring KG_METRICS would
-# put kg_metrics in the DAG, and kg_metrics also emits two untracked figures --
-# so asking for seconds of CPU would schedule a GPU job and, in a clone without
-# the gitignored corner files, the whole day-long decode chain behind it.
-# ancient() does not help: it suppresses timestamp-driven reruns, not runs caused
-# by a producer's other outputs being absent. The dependency is real and is
-# documented here rather than declared; `kg_all` is the target that rebuilds the
-# caches.
-#
-# RUN: snakemake simplex_kwgrid   (panels, CPU)
+# RUN: snakemake simplex_kwgrid   (the copy-rate caches)
 #      snakemake kg_all           (the full study, GPU)
 from os.path import join as j
 
@@ -171,11 +160,11 @@ rule simplex_kwgrid:
         KG_METRICS,
 
 
-# ── Prompt sensitivity of the edge decode (§4.3 / app:prompt-sensitivity) ────
+# ── Prompt sensitivity of the edge decode (Sec. 3.2 / App. H) ────
 # The existing paraphrase sweep (app:prompt-sensitivity) covers a DIFFERENT prompt
 # family -- "describe the combined research idea in 2-3 sentences" -- not the
 # abstract instruction this edge experiment actually issues. The mixing-fidelity
-# and copy-rate curves were therefore never scored per paraphrase, and §4.3 must
+# and copy-rate curves were therefore never scored per paraphrase, and Sec. 3.2 must
 # not claim they are prompt-stable until they are.
 #
 # Prompt 0 is the manuscript's own wording, already decoded by kg_decode_* above,
@@ -183,7 +172,7 @@ rule simplex_kwgrid:
 # scored. A reduced pair count keeps this at hours rather than days -- the claim
 # under test is the SHAPE of the curve, not a tighter estimate of its height.
 KG_PSENS_IDS = [str(i) for i in config.get("kwgrid_psens_prompts", [1, 2, 3])]
-KG_PSENS_STRATA = ["L1", "L5"]                                  # the two strata §4.3 reports
+KG_PSENS_STRATA = ["L1", "L5"]                                  # the two strata Sec. 3.2 reports
 KG_PSENS_N = config.get("kwgrid_psens_pairs", 20)
 KG_PSENS_PAIRS = [f"{n:02d}" for n in range(KG_PSENS_N)]
 KG_PSENS_ABS = j(KG_RES, "absfollow_pair{L}_{n}_pairaxis_p{p}.json")

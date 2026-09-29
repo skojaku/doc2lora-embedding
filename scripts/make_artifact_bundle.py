@@ -4,12 +4,12 @@
 Reproducing every number from raw corpora needs ~200 GB of intermediates and
 several GPU-days. The bundles let someone skip parts of that:
 
-  results  (~200 MB)  every scored / aggregated artifact downstream of the
+  results  (~224 MB)  every scored / aggregated artifact downstream of the
                       embeddings: bootstrap pools, S2AND signature tables,
                       adapter weights, label-eval JSON, the PACS node set.
                       With this bundle alone, `snakemake paper_assets` rebuilds
                       every table in the manuscript on a CPU.
-  s2and    (~14 GB)   the per-benchmark gene / text embeddings for the five
+  s2and    (~12.3 GB) the per-benchmark gene / text embeddings for the five
                       author-disambiguation datasets, so the name-disambiguation
                       rows can be re-scored from the vectors up.
   aps      (~190 GB)  the 644k-paper APS gene matrices. Too large for a Zenodo

@@ -6,11 +6,11 @@
 # label chain (baseline_trees) and to the incoherent-cluster control, so the step
 # is wired here instead:
 #
-#   ca_render_config -> exps/.../config.yaml     (derived from workflow/config.yaml,
-#                                                 so paths have ONE source of truth)
-#   ca_build_groups  -> results/paper_groups.parquet  one row per paper: PACS
-#                       results/groups.parquet        one row per node: label + size
-#                       results/tree.json             nested main -> ... -> specific
+#   ca_render_config -> data/pacs/config.yaml     (derived from workflow/config.yaml,
+#                                                  so paths have ONE source of truth)
+#   ca_build_groups  -> data/pacs/results/paper_groups.parquet  one row per paper: PACS
+#                       data/pacs/results/groups.parquet        one row per node: label + size
+#                       data/pacs/results/tree.json             nested main -> ... -> specific
 #
 # build_groups.py reads the embedding file only for its `paper_ids` (which papers
 # have a gene at all), so the rule points it at the gemma genes the workflow

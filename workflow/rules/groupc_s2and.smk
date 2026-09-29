@@ -1,7 +1,7 @@
-# Symmetric-supervision control, S2AND half + the merged 14-test table (#145).
+# Symmetric-supervision control, S2AND half + the merged 14-test table.
 #
 # groupc_bench.smk gives every FIELD-task space the same citation-trained bijective transform
-# (#93's control, 9 tests). The other five tests of the reported table are S2AND name
+# (the field half of the control, 9 tests). The other five tests of the reported table are S2AND name
 # disambiguation, and they were left asymmetric for one concrete reason: S2AND scores against the
 # SPECTER v1 vectors the benchmark ships, and no transform existed in that space. This file builds
 # it and finishes the control.
@@ -165,7 +165,7 @@ rule symmetric_raw_table:
         "../scripts/groupc/gcb_raw_table.py"
 
 
-# ── paired head-to-head (#145): is the difference between two rows real? ────────────────
+# ── paired head-to-head: is the difference between two rows real? ────────────────
 # gcb_bootstrap resamples each method on its own, so its intervals answer "how precise is this
 # number". Two rows scored on the same units are correlated, and the reader's question is whether
 # A is above B. These rules resample the units ONCE per replicate and recompute A - B on them.
@@ -236,8 +236,8 @@ rule gcb_headtohead_table:
         "../scripts/groupc/gcb_headtohead_table.py"
 
 
-# SI companion to Table 1: the collaboration AUC of each anchor window, from the manuscript's own
-# pools. Table 1 pools the windows into one AUC (the estimator App. B describes as of a0a7146c), and
+# Tab. 10 (App. J), companion to Tab. 2: the collaboration AUC of each anchor window, from the
+# manuscript's own pools. Tab. 2 pools the windows into one AUC (the estimator App. G describes), and
 # this table shows the windows behind it.
 rule collab_per_window:
     input:

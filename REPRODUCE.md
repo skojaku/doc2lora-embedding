@@ -2,7 +2,22 @@
 
 Every figure, table, and quoted number the paper reports, with the rule that produces
 it. The manuscript is not in this repository; the paths below are what the rules write
-under `figs_dir` (`results/figs` by default), named as the paper reads them.
+under `figs_dir` (`results/figs` by default), named as the paper reads them. Figure,
+table, section and appendix numbers refer to the arXiv version of the paper.
+
+A few terms used throughout:
+
+- **rule / chain / target** — a Snakemake rule is one step (inputs → script → outputs);
+  a chain is the rules in one `workflow/rules/*.smk` file; a target is a rule you ask
+  for by name (`snakemake <target>`), which schedules everything upstream of it.
+- **PACS** — the Physics and Astronomy Classification Scheme, the three-level topic
+  hierarchy of APS physics papers; its nodes are the clusters the paper labels.
+- **decode** — load an embedding back into the language model as an adapter and let it
+  write text (a label, an abstract).
+- **judge panel** — five LLMs, called through OpenRouter, that compare two labels
+  against the official one. Paid, and not bit-reproducible.
+- **tier** — one downloadable bundle of archived intermediates (`results`, `s2and`);
+  see [Unpacking the archived intermediates](#unpacking-the-archived-intermediates).
 
 Status legend:
 
@@ -15,37 +30,38 @@ Status legend:
 
 | Asset | Producer | Status |
 |---|---|---|
-| `similarity_benchmarks.tex` (Tab. similarity, Sec. results) | `uncertainty.smk:tab_similarity_benchmarks` | ✅ |
-| `encoder_matrix.tex` (Tab. per-encoder, App. tables) | same rule (third output) | ✅ |
-| `pacs-clustering.pdf` (Fig. cluster-labels, Sec. results) | `fig2_pacs_clustering.smk:fig2_pacs_clustering` | ✅ |
-| `mixing_decode.tex` (Tab. mixing-decode, Sec. results) | `fig2_pacs_clustering.smk:fig2_mixing_table` | ✅ |
-| `hierarchy_rows.tex` (Tab. hierarchy-labels, App. tables) | `baseline_trees.smk:bt_hierarchy_rows` | ✅ |
-| `prompt_sensitivity.tex` (Tab. prompt-sensitivity, App.) | `groupc_psens.smk:psens_score` | ✅ |
-| `psens_edge_curves.pdf` (Fig. psens-edge, App.) | `simplex_kwgrid.smk:kg_psens_score` | ✅ |
-| `incoherent_control.tex` (Tab. incoherent-control, App. cluster labels) | `groupc_incoherent.smk:incoh_report` (scores from `incoh_score`) | ✅ |
-| `symmetric_raw_scores.tex` (Tab. symmetric-raw, App. symmetric-adapter) | `groupc_s2and.smk:symmetric_raw_table` | ✅ |
-| `symmetric_adapter_summary.tex` (App. symmetric-adapter) | `groupc_s2and.smk:gcb_headtohead_table` | ✅ |
-| `symmetric_adapter_gain.pdf` (Fig. symmetric-gain, App.) | `groupc_s2and.smk:fig_symmetric_gain` | ✅ |
-| `collab_per_window.tex` (App. tables) | `groupc_s2and.smk:collab_per_window` | ✅ |
-| Fig. method (Sec. intro) | hand-drawn | ✋ |
+| `similarity_benchmarks.tex` (Tab. 2 similarity, Sec. 3.3) | `uncertainty.smk:tab_similarity_benchmarks` | ✅ |
+| `encoder_matrix.tex` (Tab. 9 encoder-matrix, App. J) | same rule (third output) | ✅ |
+| `pacs-clustering.pdf` (Fig. 2 cluster-labels, Sec. 3.1–3.2) | `fig2_pacs_clustering.smk:fig2_pacs_clustering` | ✅ |
+| `mixing_decode.tex` (Tab. 1 mixing-decode, Sec. 3.2) | `fig2_pacs_clustering.smk:fig2_mixing_table` | ✅ |
+| `hierarchy_rows.tex` (Tab. 12 hierarchy-labels, App. J) | `baseline_trees.smk:bt_hierarchy_rows` | ✅ |
+| `prompt_sensitivity.tex` (Tab. 6 prompt-sensitivity, App. H) | `groupc_psens.smk:psens_score` | ✅ |
+| `psens_edge_curves.pdf` (Fig. 3 psens-edge, App. H) | `simplex_kwgrid.smk:kg_psens_score` | ✅ |
+| `incoherent_control.tex` (Tab. 5 incoherent-control, App. D.2) | `groupc_incoherent.smk:incoh_report` (scores from `incoh_score`) | ✅ |
+| `symmetric_raw_scores.tex` (Tab. 8 symmetric-raw, App. I) | `groupc_s2and.smk:symmetric_raw_table` | ✅ |
+| `symmetric_adapter_summary.tex` (Tab. 7 symmetric-adapter, App. I) | `groupc_s2and.smk:gcb_headtohead_table` | ✅ |
+| `symmetric_adapter_gain.pdf` (Fig. 4 symmetric-gain, App. I) | `groupc_s2and.smk:fig_symmetric_gain` | ✅ |
+| `collab_per_window.tex` (Tab. 10 collab-per-window, App. J) | `groupc_s2and.smk:collab_per_window` | ✅ |
+| Fig. 1 method (Sec. 1) | hand-drawn | ✋ |
 
-That is every `\input` and `\includegraphics` in the merged `paper/iclr2026`, and
-`paper_assets` builds all twelve. Three rules write a further artifact the paper does
-not read — `similarity_benchmarks.pdf`, `similarity_task_transform.tex`,
-`symmetric_adapter_values.tex` — kept because they are rule outputs a rebuild can be
-diffed against.
+That is every `\input` and `\includegraphics` in the manuscript, and `paper_assets`
+builds all twelve. Some of the same rules also write artifacts the paper does not read —
+`similarity_benchmarks.pdf`, `similarity_task_transform.tex`,
+`groupc_similarity_symmetric.tex`, `symmetric_adapter_values.tex`,
+`prompt_sensitivity.pdf`, `prompt_sensitivity_edge.tex`, `incoherent_control.pdf` —
+kept because they are rule outputs a rebuild can be diffed against.
 
 ### Baselines, and where each one is reproduced
 
 | Baseline | Chain | Reported in |
 |---|---|---|
-| SBERT / SPECTER2 / Instructor / EmbeddingGemma / GTE / BGE | `baselines.smk`, `s2and.smk`, `groupc_bench.smk:gcb_embed` | Tab. similarity, App. symmetric-adapter |
-| `ICAE` | `icae.smk` (slots + its own transform) | App. symmetric-adapter, cluster labels, fusion edge, length-dial |
+| SBERT / SPECTER2 / Instructor / EmbeddingGemma / GTE | `baselines.smk`, `s2and.smk`, `groupc_bench.smk:gcb_embed` | Tab. 2 similarity, App. I symmetric-adapter |
+| `ICAE` | `icae.smk` (slots + its own transform) | App. I symmetric-adapter, cluster labels (Sec. 3.1, App. D), fusion edge (Sec. 3.2), length-dial (App. D.3) |
 | `T2L` | `t2l.smk` | cluster labels, fusion edge |
-| `vec2text` | `baseline_trees.smk:bt_vec2text`, `abstraction_walk.smk:aw_vec2text` | cluster labels, Tab. radial-vec2text |
-| `BERTopic` | `baseline_trees.smk:bt_bertopic*`, `bt_bertopic_judge` | App. BERTopic, Tab. label-eval |
+| `vec2text` | `baseline_trees.smk:bt_vec2text`, `abstraction_walk.smk:aw_vec2text` | cluster labels, Tab. 11 radial-vec2text |
+| `BERTopic` | `baseline_trees.smk:bt_bertopic*`, `bt_bertopic_judge` | App. D.1 BERTopic, Tab. 4 label-eval |
 | `KeyLLM` / in-context | `baseline_trees.smk` | cluster labels |
-| `ActPatch` | `actpatch.smk` | App. actpatch |
+| `ActPatch` | `actpatch.smk` | App. E actpatch |
 
 ICAE's retrieval-evaluation half is deliberately absent: no reported row is an ICAE
 retrieval score. What the paper reads from ICAE is its embeddings, through the
@@ -62,7 +78,7 @@ pointed at by `workflow/config.yaml:ga_triplets`.
 Its 167,111-paper text pool is NOT shipped and does not need to be: `sample_edges.py`
 writes exactly the papers the triplets name, so `ga_pool_text` rebuilds
 `pool_text_1x.parquet` from the ids and the OpenAlex tables. Everything downstream --
-`g_theta`, the ICAE transform, every arm of the symmetric control -- then trains on the
+`g_theta`, the ICAE transform, every space in the symmetric control -- then trains on the
 sample the paper reports.
 
 The adapters are named for that sample (`adapter_general_qwen_1x.pt`) because the bare
@@ -79,9 +95,9 @@ method ordering is planted by `workflow/scripts/make_sample.py` and recovered by
 score columns fails the check. See `workflow/rules/sample.smk`, and the README for what
 it does and does not cover.
 
-### Figure: cluster labels and mixtures, panel by panel
+### Fig. 2: cluster labels and mixtures, panel by panel
 
-The figure is six panels drawn from six small JSON/CSV summaries, each the cheap
+Fig. 2 is six panels drawn from a handful of small JSON/CSV summaries, each the cheap
 end of an expensive run. Drawing the figure from them is seconds of CPU; producing
 them is the GPU work named in the last column. They live under `data/`, so a clone
 either rebuilds them through those rules or unpacks them from the artifact bundle.
@@ -90,7 +106,7 @@ either rebuilds them through those rules or unpacks them from the artifact bundl
 |---|---|---|---|
 | (a) | fuzzy label overlap per PACS node | `label_eval_metric1.json` | `baseline_trees.smk:bt_label_eval_metric1` |
 | (b) | judge round robin between methods | `label_eval_metric4.json` | `baseline_trees.smk:bt_label_eval_metric4` (`snakemake label_eval`) |
-| (c) | PACS breadth against tree depth | `length_vs_breadth.csv`, `qwen_fullrank_field23.json` | `baseline_trees.smk:bt_length_dial`, `bt_decode_fullrank` |
+| (c) | decoded PACS labels against centroid length | `length_vs_breadth.csv`, `qwen_fullrank_field23.json` | `baseline_trees.smk:bt_length_dial`, `bt_decode_fullrank` |
 | (d) | Wikipedia abstraction walk | `abstraction_walk.json` | `abstraction_walk.smk:aw_doc2lora` |
 | (e) | actual against ideal mixing weight | `pair_axis_metrics_pairaxis.json` | `simplex_kwgrid.smk:kg_metrics` |
 | (f) | verbatim copy rate along the edge | `pair_axis_copyrate_pairaxis_L1.json`, `pair_axis_t2l_e1_pairaxis.json` | `simplex_kwgrid.smk:kg_copyrate`, `fig2_pacs_clustering.smk:fig2_t2l_edge_metrics` |
@@ -178,7 +194,7 @@ timestamp, so no unpacked input is newer than an unpacked output; and the code i
 of the GPU rules are `ancient()`, so a fresh clone's newer scripts do not re-trigger
 a decode. `length_dial.pdf` is the one rule output this path does not rebuild: it
 needs the 644k-paper Qwen gene matrix, and the paper no longer includes it, so it
-is outside `paper_assets` (its CSV, which Fig. cluster-labels reads, ships).
+is outside `paper_assets` (its CSV, which Fig. 2 reads, ships).
 
 ## Numbers typed into the text
 
@@ -187,15 +203,15 @@ produces the numbers; the transcription is manual.
 
 | Number / table | Producer | Target | Status |
 |---|---|---|---|
-| Tab. label-eval (App. cluster labels): fuzzy overlap, word counts, pairwise wins | `baseline_trees.smk:bt_label_eval_*` → `label_eval_summary.md`, `label_eval_metric4.json` | `snakemake label_eval` | 🔶 |
-| App. recipe-fusion: the two source recipes, the decoded midpoint, and the cheese answer, all quoted verbatim | `recipe_fusion.smk` → `data/recipe_fusion/recipe_fusion.json`, `<figs_dir>/recipe_fusion.tex` | `snakemake recipe_fusion` | 🔶 |
-| App. actpatch: identification rate and MRR, midpoint gains, the $28$-node comparison | `actpatch.smk` → `score_compare.json`, `midpoint_score.json`, `arith_m3/m4.json` | `snakemake actpatch` (add `actpatch_judged` for the LLM panel) | 🔶 |
-| T2L: the three embedding positions, the label arm, the fusion arm and its two validity gates | `t2l.smk` → `t2l_{gte,hidden,dw}_labels.json`, `t2l_fusion_score.json` | `snakemake t2l` | 🔶 |
-| Sec. fusion / App. prompt-sensitivity: the slopes ($1.11$–$1.20$, $1.19$–$1.24$, $0.29$–$0.41$) and copy rates | `simplex_kwgrid.smk:kg_psens_score` → `psens_edge.json` | in `paper_assets` | 🔶 |
-| Temporal hardening: "next-paper AUC varies by at most .005", the 2016 topic split (App. datasets, #72) | `groupc_bench.smk:gcb_bootstrap` → `<figs_dir>/groupc_temporal.tex` | `snakemake temporal_hardening` | 🔶 |
-| Train/eval overlap: "<1% of evaluation papers", "at most 1.24% of edges" (App. datasets, #22) | `general_adapter.smk:ga_leakage_overlap` | `snakemake leakage` | 🔶 |
-| Pooling ρ (mean-over-rank vs full tensor, Sec. methods) | `pooling_validation` → `data/aps/pooling_spearman.csv` | in `paper_assets` | 🔶 |
-| Tab. "Decoding clusters and mixtures" (Sec. results) — verbatim decodes | `baseline_trees.smk:bt_decode_fullrank` → `qwen_fullrank_field23.json` | `snakemake paper_assets` | 🔶 |
+| Tab. 4 label-eval (App. D): fuzzy overlap, word counts, pairwise wins | `baseline_trees.smk:bt_label_eval_*` → `label_eval_summary.md`, `label_eval_metric4.json` | `snakemake label_eval` | 🔶 |
+| App. B recipe-fusion: the two source recipes, the decoded midpoint, and the cheese answer, all quoted verbatim | `recipe_fusion.smk` → `exps/2026-06-11-recipe-fusion/results/recipe_fusion.json`, `<figs_dir>/recipe_fusion.tex` | `snakemake recipe_fusion` | 🔶 |
+| App. E actpatch: identification rate and MRR, midpoint gains, the 28-node comparison | `actpatch.smk` → `score_compare.json`, `midpoint_score.json`, `arith_m3/m4.json` | `snakemake actpatch` (add `actpatch_judged` for the LLM panel) | 🔶 |
+| T2L: the three embedding positions, the cluster labels, the fusion edge and its two validity gates | `t2l.smk` → `t2l_{gte,hidden,dw}_labels.json`, `t2l_fusion_score.json` | `snakemake t2l` | 🔶 |
+| Sec. 3.2 / App. H prompt-sensitivity: the slopes (1.11–1.20, 1.19–1.24, 0.29–0.41) and copy rates | `simplex_kwgrid.smk:kg_psens_score` → `psens_edge.json` | in `paper_assets` | 🔶 |
+| Temporal hardening: "next-paper AUC varies by at most .005", the 2016 topic split (App. A) | `groupc_bench.smk:gcb_bootstrap` → `<figs_dir>/groupc_temporal.tex` | `snakemake temporal_hardening` | 🔶 |
+| Train/eval overlap: "<1% of evaluation papers", "at most 1.24% of edges" (App. A) | `general_adapter.smk:ga_leakage_overlap` | `snakemake leakage` | 🔶 |
+| Pooling ρ (mean-over-rank vs full tensor, Sec. 2.2) | `pooling_validation` → `data/aps/pooling_spearman.csv` | in `paper_assets` | 🔶 |
+| Tab. 11 radial-vec2text (App. J): the `vec2text` magnitude sweep, quoted verbatim | `abstraction_walk.smk:aw_vec2text` | `snakemake abstraction_walk_all` | 🔶 |
 
 `label_eval`, `actpatch_judged`, and the incoherent-cluster control call an LLM judge
 panel through OpenRouter, so they need `OPENROUTER_API_KEY` and cost money;
@@ -234,7 +250,7 @@ interface, and driven by `baselines.smk` for the field corpora and by
 | `gte` | `Alibaba-NLP/gte-large-en-v1.5` | loaded with `trust_remote_code` |
 | `vec2text` | GTR-base corrector | an inverter, not an encoder: it takes no prompt, so it is read back as a reconstruction. Isolated `.venv-vec2text` |
 
-**Compression baselines** decode from a bottleneck the way \doctolora decodes from
+**Compression baselines** decode from a bottleneck the way Doc2LoRA decodes from
 an adapter, which is what makes them the interesting comparison:
 
 | Baseline | Where | Note |
@@ -244,12 +260,12 @@ an adapter, which is what makes them the interesting comparison:
 | `ActPatch` | `actpatch.smk` | training-free activation patching of Qwen3-4B hidden states; needs no third-party weights |
 | `KeyLLM` / in-context | `baseline_trees.smk` | an LLM reading the documents, for the cluster-label comparison |
 
-**T2L runs three arms, not one.** Three points in its pipeline can each be called
+**T2L is run three ways, not one.** Three points in its pipeline can each be called
 "the embedding", and reporting only the first would be the shortcut a reviewer
 would find: `e0` the frozen `gte-large` output (1,024-dim), `e1` the TaskEncoder
 output (64-dim, the only document-dependent learned layer), and `e2` the generated
 LoRA factors (3,407,872-dim, the structural analogue of an idea gene). `t2l.smk`
-gates every reportable arm behind two checks that must pass first — `t2l_sanity`
+gates every reported variant behind two checks that must pass first — `t2l_sanity`
 (do different documents give different adapters at all) and `t2l_validity` (does
 the pipeline reproduce T2L's intended behaviour on a task it was trained on).
 Every method receives the paper's title and abstract verbatim, T2L included, so
@@ -322,16 +338,16 @@ Two more classes of defect came out of reading the scripts rather than the DAG:
    now one evaluator and one data-locating module instead of a confusing v1/v2 pair.
 
 10. **`groupc/fid_score.py` could not be parsed at all** — an f-string closed a
-    literal LaTeX brace with a single `}`. The file ships from a chain that was
-    deliberately not run (#95 is answered by citing the doc-to-lora paper), which is
-    how a syntax error survived. Fixed and `compileall` now passes over the whole
-    tree.
+    literal LaTeX brace with a single `}`. It belonged to a decode-fidelity chain that
+    was deliberately not run (the paper cites the doc-to-lora paper for decode
+    fidelity instead), which is how a syntax error survived. The script is no longer
+    shipped, and `compileall` passes over the whole tree.
 11. **The pair-axis ICAE decoder has its own module.** `decode_absfollow_icae.py`
     reached across into an exploratory experiment directory for the ICAE loader it
     needs, and that directory is not part of the manuscript's closure. The loader is
     `workflow/scripts/icae_slots.py` here: a thin wrapper over
     `icae_lib.load_icae` that resolves the third-party weights, source tree, and base
-    model through `workflow/config.yaml`, so the ICAE arm of the edge decode has one
+    model through `workflow/config.yaml`, so the ICAE decode of the fusion edge has one
     dependency instead of a chain of sideways imports.
 12. **Code and results are separate directories.** A dated experiment folder used to
     hold both, so a script wrote its outputs next to itself and a rule could point at
@@ -341,8 +357,7 @@ Two more classes of defect came out of reading the scripts rather than the DAG:
     what lets the sample corpus run the real scripts without touching a real result.
 
 Scripts that no rule reaches (`eval_next_paper.py`, `eval_yearmean.py`,
-`year_balanced_collab.py`, `specter2_embed.py`) are kept for provenance and now say
-so in their own docstrings, so they cannot be mistaken for pipeline steps.
+`year_balanced_collab.py`, `specter2_embed.py`) have been removed.
 
 ## What was left out, and why
 
@@ -367,11 +382,11 @@ From nothing but the corpora and checkpoints (`snakemake -n <target>`):
 | `figure2` | 41 | the pair-axis edge decodes behind panels (e), (f) |
 | `label_eval` | 21 | LLM judge panel (OpenRouter, costs money) |
 | `icae_embeddings` | 15 | ICAE slots for every benchmark subset |
-| `actpatch_judged` | 13 | 500 decodes per arm, then the judge panel |
+| `actpatch_judged` | 13 | 500 decodes per method, then the judge panel |
 | `pair_axis` | 13 | 250 pairs × 13 points × 2 decoders |
 | `fields` | 11 | economics + psychology corpora and genes |
 | `bench_subsets` | 11 | slicing every embedding to the touched ids |
-| `t2l` | 9 | the hypernetwork baseline's label and fusion arms |
+| `t2l` | 9 | the hypernetwork baseline's labels and fusion edge |
 | `sample_check_judged` | 7 | nothing: 20 seconds on a CPU |
 | `pacs_groups` | 5 | the PACS node set |
 | `abstraction_walk_all` | 4 | the ICAE / vec2text magnitude sweeps |
@@ -379,8 +394,8 @@ From nothing but the corpora and checkpoints (`snakemake -n <target>`):
 
 Every one of these was checked with `snakemake -n` against an **empty** `data/`
 directory, so the counts are true cold-start figures: the only inputs assumed to
-exist are the licensed corpora and the checkpoints named in
-`workflow/config.yaml`.
+exist are the licensed corpora, the checkpoints named in `workflow/config.yaml`, and
+`data/general_adapter/triplets_1x.parquet` from the `results` tier (see above).
 
 With the `results` artifact bundle unpacked, `paper_assets` collapses to its
 29 CPU table/figure jobs; with `-j4` they take about 1.5 hours, most of it
