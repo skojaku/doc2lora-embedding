@@ -7,8 +7,8 @@ every file against data/ARTIFACTS.tsv (sha256). Nothing here needs a GPU.
 
 Usage
 -----
-    python scripts/fetch_artifacts.py results            # ~200 MB: rebuild every table on a CPU
-    python scripts/fetch_artifacts.py results s2and      # + 14 GB: re-score name disambiguation
+    python scripts/fetch_artifacts.py results            # ~224 MB: rebuild every table on a CPU
+    python scripts/fetch_artifacts.py results s2and      # + ~12.3 GB: re-score name disambiguation
     python scripts/fetch_artifacts.py --verify           # re-check what is already on disk
     python scripts/fetch_artifacts.py --record 1234567 results   # pin a specific record
     python scripts/fetch_artifacts.py --from ~/Downloads results   # tarballs you already have
