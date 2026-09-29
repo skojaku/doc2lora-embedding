@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "doc2lora"
+version = "0.2.0"
+description = "Turn documents into compact adapters, do arithmetic on them, and decode them back into text."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "Sadamori Kojaku", email = "skojaku@binghamton.edu" },
+]
+keywords = ["lora", "embeddings", "adapters", "representation-learning", "nlp"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "torch",
+    "numpy",
+    "einops",
+    # transformers is pinned: the perceiver backbone breaks past 4.51.3
+    # (see the README troubleshooting table). Do not upgrade casually.
+    "transformers==4.51.3",
+]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The model backbone (ModulatedPretrainedModel, tokenizers, LoRA merge/apply)
+# lives in `ctx_to_lora`, which is NOT on PyPI, so it cannot be a normal
+# dependency. `import doc2lora` and all pure tensor ops (mix / mean / interpolate
+# / cluster centroids) work without it; only load_model / internalize / decode
+# need it at runtime, and they raise a clear install message if it is missing.
+#
+# Install it as a two-step, pinning an exact commit for reproducibility:
+#   pip install doc2lora
+#   pip install -e /path/to/doc-to-lora            # provides `ctx_to_lora`
+# or, in one line:
+#   pip install "doc2lora @ git+https://github.com/skojaku/doc2lora-embedding.git#subdirectory=libs/doc2lora"
+#
+# TODO(maintainer decision, issue #76): pick ONE canonical path for ctx_to_lora —
+# (a) vendor the needed modules into doc2lora._vendor (check SakanaAI license),
+# (b) publish a minimal `ctx-to-lora` wheel from a pinned fork, or
+# (c) keep the git-install two-step above. Until decided, (c) is documented.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[project.optional-dependencies]
+demo = ["marimo"]
+# GPU extra: flash-attn is a runtime requirement of the perceiver on CUDA. It
+# needs a build toolchain / matching CUDA; see the README for the wheel recipe.
+gpu = ["flash-attn"]
+dev = ["pytest", "ruff"]
+
+[project.urls]
+Homepage = "https://github.com/skojaku/doc2lora-embedding"
+Repository = "https://github.com/skojaku/doc2lora-embedding"
+
+[tool.setuptools]
+packages = ["doc2lora"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+# Keep CI green on the current code while still catching real breakage
+# (syntax errors, undefined names, bad f-strings). Broaden over time.
+select = ["E9", "F63", "F7", "F82"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "gpu: needs a CUDA GPU + a doc2lora checkpoint (not run in CPU CI)",
+    "slow: slow end-to-end test",
+]

@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software or the doc2lora method, please cite it as below."
+title: "doc2lora-embedding: reproduction workflow for Decodable Representations of Scientific Ideas"
+abstract: >-
+  Turn documents into compact LoRA-shaped adapters, do arithmetic on them
+  (average, interpolate, blend), and decode them back into text.
+type: software
+authors:
+  # Mansuri and Zachariah contributed equally.
+  - family-names: Mansuri
+    given-names: Chand Sahil
+    affiliation: Binghamton University
+  - family-names: Zachariah
+    given-names: Joel
+    affiliation: Binghamton University
+  - family-names: Kojaku
+    given-names: Sadamori
+    email: skojaku@binghamton.edu
+    affiliation: Binghamton University
+repository-code: "https://github.com/skojaku/doc2lora-embedding"
+url: "https://github.com/skojaku/doc2lora-embedding"
+license: MIT
+version: "0.2.0"
+# TODO(issue #81): add `preferred-citation` (type: article), the arXiv `doi`,
+# and `date-released` once the preprint is posted, then bump `version`.

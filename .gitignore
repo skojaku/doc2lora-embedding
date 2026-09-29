@@ -1,98 +1,32 @@
-# LaTeX
-*.aux
-*.bbl
-*.blg
-*.bcf
-*.synctex.gz
-*.toc
-*blx.bib
-*.fls
-*.fdb_latexmk
-*.out
-*.run.xml
-main.pdf
-supp.pdf
-*.log
+# This repository tracks reproduction PRIMITIVES only: the workflow, the scripts
+# it calls, the libraries they import, and the documentation. Everything a rule
+# can regenerate stays out.
+#
+# NOTE: git does not treat a trailing `#` as a comment, so every comment here is
+# on its own line.
 
-# Data files
-*.csv
-*.tsv
-*.txt
-
-# Office files
-*.docx
-*.doc
-*.ppt
-*.pptx
-*.xls
-*.xlsx
-
-# Jupyter
-.ipynb_checkpoints/
-
-# Snakemake
-.snakemake
+# ── Machine-specific configuration ───────────────────────────────────────
+# workflow/config.yaml is your copy of workflow/config.template.yaml.
 workflow/config.yaml
+.env
 
-# Others
-.DS_Store
-*.un~
+# ── Everything a rule writes ─────────────────────────────────────────────
+# data/ is the single output root: corpora you fetch, embeddings, adapters,
+# score pools, decodes, and the generated tables and figures under results/.
+# The Zenodo manifest and this directory's README are primitives. The sample
+# corpus is not: `make_sample.py` generates it from a seed.
+data/*
+!data/ARTIFACTS.tsv
+!data/README.md
+results/
+dist/
 
-###################### Standard Python gitignore
-
-# Byte-compiled / optimized / DLL files
+# ── Python / Snakemake / editors ─────────────────────────────────────────
+.snakemake/
+logs/
 __pycache__/
 *.py[cod]
-
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib64/
-parts/
-sdist/
-var/
 *.egg-info/
-.installed.cfg
-*.egg
-
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*,cover
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
+.venv*/
+.ipynb_checkpoints/
+.DS_Store
