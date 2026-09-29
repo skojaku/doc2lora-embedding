@@ -10,6 +10,8 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [
+    { name = "Chand Sahil Mansuri" },
+    { name = "Joel Zachariah" },
     { name = "Sadamori Kojaku", email = "skojaku@binghamton.edu" },
 ]
 keywords = ["lora", "embeddings", "adapters", "representation-learning", "nlp"]
@@ -36,15 +38,10 @@ dependencies = [
 # need it at runtime, and they raise a clear install message if it is missing.
 #
 # Install it as a two-step, pinning an exact commit for reproducibility:
-#   pip install doc2lora
+#   pip install -e libs/doc2lora                   # from a clone of this repository
 #   pip install -e /path/to/doc-to-lora            # provides `ctx_to_lora`
-# or, in one line:
+# or install this library straight from GitHub:
 #   pip install "doc2lora @ git+https://github.com/skojaku/doc2lora-embedding.git#subdirectory=libs/doc2lora"
-#
-# TODO(maintainer decision, issue #76): pick ONE canonical path for ctx_to_lora —
-# (a) vendor the needed modules into doc2lora._vendor (check SakanaAI license),
-# (b) publish a minimal `ctx-to-lora` wheel from a pinned fork, or
-# (c) keep the git-install two-step above. Until decided, (c) is documented.
 # ─────────────────────────────────────────────────────────────────────────────
 
 [project.optional-dependencies]
