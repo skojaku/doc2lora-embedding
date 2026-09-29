@@ -1,5 +1,8 @@
 # Doc2LoRA embeddings ("idea genes") — reproduction workflow
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22842861.svg)](https://doi.org/10.5281/zenodo.22842861)
+· [Project page](https://skojaku.github.io/doc2lora-embedding/)
+
 The code behind *"Doc2LoRA Provides Decodable Representations of Scientific Ideas"*:
 the Snakemake workflow that produces every number the paper reports, the scripts it
 calls, and the two libraries they import. Code and documentation only — the
@@ -142,7 +145,7 @@ Secrets go in `.env` (gitignored): `HF_TOKEN` for the gated base models,
 | `vec2text` GTR corrector | [vec2text](https://github.com/vec2text/vec2text) | third-party weights, isolated venv |
 
 Archived **intermediates** (per-unit score pools, adapters, benchmark embeddings) are on
-Zenodo:
+Zenodo ([10.5281/zenodo.22842861](https://doi.org/10.5281/zenodo.22842861)):
 
 ```bash
 python scripts/fetch_artifacts.py results        # ~224 MB, 1227 files -> every table rebuilds on a CPU
