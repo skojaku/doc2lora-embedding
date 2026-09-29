@@ -32,8 +32,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "data" / "ARTIFACTS.tsv"
 
-# The deposition id, which becomes the record id on publish. It resolves only AFTER
-# the draft is published (DOI 10.5281/zenodo.22842861); --record overrides it.
+# The published record (DOI 10.5281/zenodo.22842861); --record overrides it.
 ZENODO_RECORD = "22842861"
 ZENODO_API = "https://zenodo.org/api/records/{record}"
 
