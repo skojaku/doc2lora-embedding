@@ -6,8 +6,8 @@ across members, then decode the mean back to text and keep a short label. This
 is the apples-to-apples analogue of "average the adapters, then decode the
 mean." Output: icae_tree.json.
 
-Run on aster:
-  CUDA_VISIBLE_DEVICES=0 python ../2026-06-11-baseline-trees/icae_label.py
+Run on a GPU:
+  CUDA_VISIBLE_DEVICES=0 python workflow/scripts/icae_label.py nodes.json icae_tree_field23.json
 """
 import json
 import os

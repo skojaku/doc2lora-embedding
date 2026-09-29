@@ -7,7 +7,7 @@
 #
 #   App. symmetric-adapter gives every space the same citation transform and finds
 #   that only the compressed generator spaces gain (ICAE +.178 over 13 of 14
-#   benchmarks, ahead of \doctolora's +.059). Those numbers read `icae_emb.npz` and
+#   benchmarks, ahead of Doc2LoRA's +.061). Those numbers read `icae_emb.npz` and
 #   `icae_genkron_emb.npz` through groupc_bench.smk:GCB_CACHED and
 #   gcb_s2and_pool.py.
 #

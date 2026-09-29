@@ -1,6 +1,6 @@
 # ActPatch: the base model's own hidden states as a decoder baseline (App. actpatch).
 #
-# The comparison the appendix makes is deliberately narrow. Both arms inject a vector
+# The comparison the appendix makes is deliberately narrow. Both methods inject a vector
 # into the SAME Qwen3-4B under the SAME prompt and differ only in where the vector
 # comes from: a doc2lora idea gene, or a mean-pooled hidden state read out of the
 # frozen model and patched into a fixed position of a completion prompt (activation
@@ -8,7 +8,7 @@
 # that prompt produces with no vector inserted, because the prompt has a strong prior
 # of its own and an absolute number would mostly measure it.
 #
-# Three questions, three chains, run per arm and then scored together:
+# Three questions, three chains, run per method and then scored together:
 #
 #   identification  does the decode name the SOURCE document, against 99 distractors
 #                   drawn from the same PACS subdivision (decode_compare -> score_compare)
@@ -17,7 +17,7 @@
 #   node means      do the 28 PACS node means decode to the right field
 #                   (arith_decode -> arith_name -> arith_m3 / arith_m4)
 #
-# act_config selects the activation arm's layer/slots/mode; layer_sweep is what picks
+# act_config selects the activation baseline's layer/slots/mode; layer_sweep is what picks
 # them, and the appendix reports block 15 with eight slots on a continuation prompt.
 # Asking a direct question ("what is the topic?") returns empty strings, which is why
 # the sweep exists rather than a guess.

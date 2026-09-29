@@ -1,4 +1,4 @@
-# Decode-prompt paraphrase sensitivity (#73).
+# Decode-prompt paraphrase sensitivity (App. H).
 #
 # Decoding is greedy, so each (embedding, prompt) pair yields one output, and the manuscript uses a
 # different prompt per section without reporting how much an output moves under paraphrase.  This

@@ -1,8 +1,7 @@
-# Abstraction walk (radius -> generality) behind §length-generality / App. length-dial.
+# Abstraction walk (radius -> generality) behind Fig. 2 (d) and App. D.3 length-dial.
 # Embed one Wikipedia lead (wiki_leads.json), scale its representation toward 0, and
 # decode at each radius. doc2lora abstracts upward (specific -> field -> base prior);
 # ICAE is magnitude-invariant; vec2text holds the source specificity then degrades.
-# Full write-up + caveats: data/labels/NOTE.md.
 #
 # ICAE gets the SAME decode prompt as doc2lora (like-for-like); vec2text is an
 # inverter (no prompt). HEAVY: GPU + qwen checkpoint (doc2lora), ICAE weights
@@ -19,8 +18,8 @@ AW_ICAE = j(AW_DIR, "icae_abstraction_walk.json")
 AW_VEC2TEXT = j(AW_DIR, "vec2text_abstraction_walk.json")
 
 
-# leads + script are git-tracked next to the tracked output (Fig. 2 panel (b)
-# reads it); a fresh checkout gives them arbitrary mtimes, so they are ancient()
+# leads + script are git-tracked and the output ships in the `results` tier (Fig. 2
+# panel (d) reads it); a fresh checkout gives them arbitrary mtimes, so they are ancient()
 # -- otherwise `snakemake fig2` on a clone with the data symlink would re-run
 # this GPU decode just to refresh a file it already has.
 rule aw_doc2lora:
@@ -39,7 +38,7 @@ rule aw_doc2lora:
 # Same ancient() reasoning as aw_doc2lora: the output is a fetched artifact, so a clone
 # must not re-run a GPU decode over mtimes alone. The ICAE checkpoint is NOT an input --
 # icae_label.py resolves it from config.yaml:icae_weights at run time, exactly as the other
-# ICAE arms do (bt_icae_raw, kg_decode_icae, fig2_decode_curated_icae). Declaring it here
+# ICAE rules do (bt_icae_raw, kg_decode_icae, fig2_decode_curated_icae). Declaring it here
 # made this rule the only one that could not even be dry-run without the third-party
 # weights unpacked, which broke `snakemake -n abstraction_walk_all`.
 rule aw_icae:

@@ -1,18 +1,18 @@
-# Group C similarity re-runs: modern encoders (#69), the transformed-baseline control (#93),
-# and temporal hardening (#72).  ONE chain, because all three write the same kind of row.
+# Group C similarity re-runs: modern encoders, the transformed-baseline control (App. I),
+# and temporal hardening (App. A).  ONE chain, because all three write the same kind of row.
 #
 # Why a separate pool directory: adding methods changes the coverage intersection that defines the
 # evaluation units, so folding them into data/uncertainty/pools would silently move the
-# manuscript's Table 1 numbers.  Everything here lands in data/groupc/bench/, and Table 1 keeps its
+# manuscript's Tab. 2 numbers.  Everything here lands in data/groupc/bench/, and Tab. 2 keeps its
 # byte-identical inputs.
 #
-#   gcb_subset       -> subset_text.parquet     the papers the harness touches (#63's eval-id lists)
+#   gcb_subset       -> subset_text.parquet     the papers the harness touches (bench.smk's eval-id lists)
 #   gcb_embed        -> emb_{method}.npz        BGE / GTE / EmbeddingGemma (/ E5-Mistral) on the subset
 #   gcb_pool_embed   -> pool_{method}.npz       the g_theta TRAINING pool in each baseline's space
 #   gcb_train        -> adapter_{method}[_pre2018].pt   same triplets, same loss, same steps
 #   gcb_apply        -> {method}_kron_gc.npz    the transform applied to each benchmark space
 #   gcb_pool_scores  -> pools/{task}_{field}.parquet    paired per-unit scores, all methods
-#   gcb_bootstrap    -> figs/groupc_similarity.tex (#69/#93) + figs/groupc_temporal.tex (#72)
+#   gcb_bootstrap    -> figs/groupc_similarity.tex + figs/groupc_temporal.tex
 #
 # RUN: snakemake groupc_bench -j3 --rerun-triggers mtime
 import os
@@ -29,10 +29,10 @@ EMGEMMA_VENV = ".venv-emgemma"
 GCB_FIELDS = config.get("gcb_fields", ["aps", "economics", "psychology"])
 # encoders that have to be run here (no cached vectors for the benchmark subsets)
 GCB_NEW_ENC = config.get("gcb_new_encoders", ["bge", "gte", "embeddinggemma"])
-# every space that gets the SAME citation transform (the #93 control + the paper's own gene)
+# every space that gets the SAME citation transform (the symmetric control + the paper's own gene)
 GCB_TRANSFORM = config.get("gcb_transform_methods",
                            ["gene", "sbert", "specter2", "instructor", "embeddinggemma", "bge", "gte"])
-# the temporally cut-off transform is expensive to add everywhere; #72 needs the paper's transform
+# the temporally cut-off transform is expensive to add everywhere; temporal hardening needs the paper's transform
 # plus one text reference
 GCB_TEMPORAL = config.get("gcb_temporal_methods", ["gene", "sbert"])
 GCB_CUTOFF = config.get("gcb_cutoff_year", 2018)
@@ -50,10 +50,10 @@ GCB_CACHED = {
     "sbert": ("sbert_allmpnet.npz", "vecs"),
     "specter2": ("baseline_specter2.npz", "vecs"),
     "instructor": ("baseline_instructor.npz", "vecs"),
-    "icae": ("icae_emb.npz", "vecs"),                 # #63's ICAE baseline, free to carry along
+    "icae": ("icae_emb.npz", "vecs"),                 # the ICAE baseline, free to carry along
     # ICAE WITH the citation transform. Trained by the ICAE chain (icae.smk), not by gcb_train: the
     # ICAE space factorises over 128 memory tokens x 4,096 channels, which gcb_train's flat path does
-    # not cover. Same citation supervision, a 16.8M-parameter map (#145).
+    # not cover. Same citation supervision, a 16.8M-parameter map.
     "icae_genkron": ("icae_genkron_emb.npz", "vecs"),
 }
 
@@ -64,8 +64,8 @@ def _field_text(field):
 
 
 # Baselines whose FULL-corpus vectors are already on disk: the benchmark subset is a slice of them,
-# not a fresh GPU pass. GTE is Table 1's own `baseline_gte.npz` (the sentence-transformers load), not
-# the CLS-pooled `baseline_gte_large.npz` that #151 uses for Text-to-LoRA's coordinates -- the
+# not a fresh GPU pass. GTE is Tab. 2's own `baseline_gte.npz` (the sentence-transformers load), not
+# the CLS-pooled `baseline_gte_large.npz` that t2l.smk uses for Text-to-LoRA's coordinates -- the
 # control has to adapt the same vectors the reported row scores.
 GCB_FULL_SRC = {
     "gte": lambda field: (j(APS_DIR, "embeddings", "baseline_gte.npz") if field == "aps"
@@ -106,7 +106,7 @@ def _src_npz(field, method):
     # Encoders run by this chain. Where a full-corpus file exists for the field we read it, so the
     # row matches the one the manuscript scores; elsewhere we read this chain's own subset pass.
     # GTE means the sentence-transformers load (baseline_gte.npz), NOT the CLS-pooled
-    # baseline_gte_large.npz that #151 uses for Text-to-LoRA's coordinates. APS EmbeddingGemma was
+    # baseline_gte_large.npz that t2l.smk uses for Text-to-LoRA's coordinates. APS EmbeddingGemma was
     # re-embedded over the corpus on 2026-09-23; it had been missing since before this control ran.
     full = j(_field_emb_dir(field), GCB_FULL_NEW.get(method, ""))
     if field in GCB_FULL_FIELD_DIR and method in GCB_FULL_NEW and os.path.exists(full):
@@ -114,7 +114,7 @@ def _src_npz(field, method):
     return j(GCB_DIR, field, f"emb_{method}.npz")
 
 
-# GOTCHA (#145): triplets.parquet is NOT the sample the manuscript reports. The 2026-06-25
+# GOTCHA: triplets.parquet is NOT the sample the manuscript reports. The 2026-06-25
 # data-scaling test overwrote it with a FRESH 2x resample (85,635 tuples over a 335,085-paper pool),
 # and that resample is not a superset -- it shares only 82,635 of the 167,111 papers the reported
 # transform was trained on, and just 29 of the 42,332 reported tuples survive inside it. The

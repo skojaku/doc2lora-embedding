@@ -127,7 +127,7 @@ rule unc_bootstrap:
         f"python {SCRIPTS}/bootstrap.py {{params.nboot}}"
 
 
-# LaTeX tables from the bootstrap summary (\input-ed by paper/iclr2026/main.tex):
+# LaTeX tables from the bootstrap summary (\input-ed by the manuscript):
 # tab:similarity (main text) and tab:encoder-matrix (appendix).
 TAB_SIMILARITY = j(FIGS_DIR, "similarity_benchmarks.tex")
 TAB_TASK_TRANSFORM = j(FIGS_DIR, "similarity_task_transform.tex")

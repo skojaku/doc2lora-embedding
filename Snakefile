@@ -63,7 +63,7 @@ include: "workflow/rules/groupc_incoherent.smk" # Tab. incoherent-control (App.)
 # Chains whose numbers are TYPED into the manuscript rather than \input-ed, so they
 # sit behind their own targets and not in `paper_assets` (see REPRODUCE.md):
 include: "workflow/rules/bench.smk"             # the sliced benchmark subsets
-include: "workflow/rules/groupc_bench.smk"      # temporal-hardening claims (App. datasets, #72)
+include: "workflow/rules/groupc_bench.smk"      # temporal-hardening claims (App. A)
 include: "workflow/rules/icae.smk"              # ICAE slots + its citation transform
 include: "workflow/rules/groupc_s2and.smk"      # App. symmetric-adapter: the S2AND half, the
                                                 # raw-score table, the gain figure, head-to-head
@@ -86,29 +86,29 @@ include: "workflow/rules/sample.smk"
 
 # ── Manuscript targets ───────────────────────────────────────────────────
 #
-# `paper_assets` builds exactly what paper/iclr2026 \input's or \includegraphics's
+# `paper_assets` builds exactly what the manuscript \input's or \includegraphics's
 # and that a rule owns. Adding a rule here is a claim that the manuscript reads
-# its output. Assets with no rule (Fig. method, Fig. cluster-labels) are listed
-# in REPRODUCE.md with the command that makes them.
+# its output. The one asset with no rule (Fig. 1, method, hand-drawn) is listed
+# in REPRODUCE.md.
 
 rule paper_assets:
     input:
-        # Tab. similarity        -> figs/similarity_benchmarks.tex
-        # Tab. encoder-matrix    -> figs/encoder_matrix.tex
+        # Tab. similarity        -> <figs_dir>/similarity_benchmarks.tex
+        # Tab. encoder-matrix    -> <figs_dir>/encoder_matrix.tex
         rules.uncertainty_all.input,
-        # Tab. hierarchy-labels  -> paper/iclr2026/hierarchy_rows.tex
+        # Tab. hierarchy-labels  -> <figs_dir>/hierarchy_rows.tex
         # plus the cluster-label report behind Tab. label-eval. The LLM judge
         # panel (metric 4) is NOT pulled in here; run `label_eval` for it.
         rules.baseline_trees.input,
-        # Tab. prompt-sensitivity -> figs/prompt_sensitivity.tex   (App., #73)
+        # Tab. prompt-sensitivity -> <figs_dir>/prompt_sensitivity.tex   (App. H)
         rules.groupc_psens.input,
-        # Tab. incoherent-control -> figs/incoherent_control.tex   (App., #101)
+        # Tab. incoherent-control -> <figs_dir>/incoherent_control.tex   (App. D.2)
         rules.groupc_incoherent.input,
-        # Fig. cluster-labels     -> figs/pacs-clustering.pdf
-        # Tab. mixing-decode      -> figs/mixing_decode.tex           (Sec. results)
+        # Fig. cluster-labels     -> <figs_dir>/pacs-clustering.pdf
+        # Tab. mixing-decode      -> <figs_dir>/mixing_decode.tex           (Sec. results)
         rules.fig2.input,
-        # Fig. psens-edge -> figs/psens_edge_curves.pdf               (App.)
-        # The same rule also writes figs/prompt_sensitivity_edge.tex, whose numbers
+        # Fig. psens-edge -> <figs_dir>/psens_edge_curves.pdf         (App. H)
+        # The same rule also writes <figs_dir>/prompt_sensitivity_edge.tex, whose numbers
         # the appendix states in prose rather than \input-ing.
         rules.kg_psens_all.input,
         # Tab. symmetric-raw       -> <figs_dir>/symmetric_raw_scores.tex
